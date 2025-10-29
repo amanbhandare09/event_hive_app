@@ -5,7 +5,7 @@ import enum
 db = SQLAlchemy()
 
 class eventstatus(enum.Enum):
-    Online ='online'
+    online ='online'
     offline='offline'
 
 class event(db.Model):
@@ -20,9 +20,8 @@ class event(db.Model):
     def __repr__(self):
         return f"<event {self.title} >"
 
-class Attendee(db.model):
+class Attendee(db.Model):
     __tablename__ ='attendee'
-
     id = db.column(db.Integer,primary_key=True)
     name = db.column(db.string(100),nullable=False)
     email = db.column(db.string(120),unique=True,nullable=False)
