@@ -4,40 +4,58 @@ import enum
 
 db = SQLAlchemy()
 
-class eventstatus(enum.Enum):
-    online ='online'
-    offline='offline'
 
-event_attendee = db.Table(
-    'event_attendee',
-    db.Column('event_id', db.Integer, db.ForeignKey('events.id'), primary_key=True),
-    db.Column('attendee_id', db.Integer, db.ForeignKey('attendees.id'), primary_key=True)
+# Association table for many-to-many relationship
+event_attendees = db.Table(
+    "event_attendees",
+    db.Column("user_id", db.Integer, db.ForeignKey("users.id"), primary_key=True),
+    db.Column("event_id", db.Integer, db.ForeignKey("events.id"), primary_key=True)
 )
 
+class EventMode(enum.Enum):
+    online = "online"
+    offline = "offline"
 
-class event(db.Model):
-    __tablename__ = 'events'
-    id = db.column(db.Integer,primary_key=True)
-    title=db.column(db.String(100),nullable=False)
-    date=db.column(db.Date,nullable=False)
-    time=db.column(db.Time)
-    mode=db.column(db.Enum(eventstatus),default = eventstatus.online,nullable=False)
-    venue=db.column(db.string(100),nullable=True)
+class Event(db.Model):
+    __tablename__ = "events"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    date = db.Column(db.Date, nullable=False)
+    time = db.Column(db.Time)
+    mode = db.Column(db.Enum(EventMode), default=EventMode.online, nullable=False)
+    venue = db.Column(db.String(150))
+    capacity = db.Column(db.Integer, default=100)
+
+    organizer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    organizer = db.relationship("User", back_populates="created_events")
+
+    attendees = db.relationship(
+        "User", secondary=event_attendees, back_populates="attending_events"
+    )
+
+    def __repr__(self):
+        return f"<Event {self.title}>"
     
-    attendees = db.relationship('Attendee',secondary=event_attendee,back_populates='events')
+from app import db
+
+class User(db.Model):
+    __tablename__ = "users"
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+
+    # One-to-many: user can create multiple events
+    created_events = db.relationship("Event", back_populates="organizer")
+
+    # Many-to-many: user can attend multiple events
+    attending_events = db.relationship(
+        "Event", secondary="event_attendees", back_populates="attendees"
+    )
 
     def __repr__(self):
-        return f"<event {self.title} >"
+        return f"<User {self.username}>"
 
-class Attendee(db.Model):
-    __tablename__ ='attendee'
-    id = db.column(db.Integer,primary_key=True)
-    name = db.column(db.string(100),nullable=False)
-    email = db.column(db.string(120),unique=True,nullable=False)
-    phone = db.column(db.string(10))
-    address=db.column(db.string(200),nullable=False)
-
-    events = db.relationship('Event',secondary=event_attendee,back_populates='attendees')
-
-    def __repr__(self):
-        return f"<Attendee {self.title} >" 
