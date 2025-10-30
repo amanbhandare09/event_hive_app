@@ -79,7 +79,7 @@
 <body>
     <div class="signup-container">
         <h2>Sign Up</h2>
-        <form action="/register" method="POST">
+        <form action="{{ url_for('auth.signup_post') }}" method="POST">
             <label for="name">Full Name</label>
             <input type="text" id="name" name="name" placeholder="Enter your name" required>
 
