@@ -1,9 +1,3 @@
-from dotenv import load_dotenv
-import subprocess
-
-load_dotenv(override = True)
-
-subprocess.run(["flask","run"])
 from flask import Blueprint, jsonify, request, render_template
 
 # Main Blueprint
