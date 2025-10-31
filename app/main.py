@@ -11,7 +11,7 @@ def index():
 @main_blueprint.route("/profile", methods=["GET"])
 def profile():
     """Display user profile"""
-    return "Profile Page", 200
+    return render_template("profile.html"), 200
 
 @main_blueprint.route("/api/health", methods=["GET"])
 def api_health():

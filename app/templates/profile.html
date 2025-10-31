@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Events | EventHive</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(120deg, #0a0a0a, #003300);
+      color: #f0f0f0;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #111;
+      padding: 15px 40px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #4CAF50;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .user-info img {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      border: 2px solid #4CAF50;
+    }
+
+    .event-container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    .event-card {
+      background-color: #1a1a1a;
+      border-left: 5px solid #4CAF50;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+      transition: transform 0.2s;
+    }
+
+    .event-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .event-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .event-meta {
+      color: #aaa;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .created-by-you {
+      background: #003300;
+      color: #4CAF50;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">EventHive</div>
+    <div class="user-info">
+      <span>{{ .username }}</span>
+      <!-- <img src="{{ url_for('static', filename='images/user_logo.png') }}" alt="User Logo"> -->
+    </div>
+  </header>
+
+  <div class="event-container">
+    <h2>All Events</h2>
+
+    {% if events %}
+      {% for event in events %}
+        <div class="event-card">
+          <div class="event-title">{{ event.title }}</div>
+          <div class="event-meta">
+            Hosted by <strong>{{ event.creator.username }}</strong> | 
+            Date: {{ event.date.strftime('%d %b %Y') }} | 
+            Location: {{ event.location }}
+          </div>
+
+          {% if event.creator.id == current_user.id %}
+            <div class="created-by-you">Created by you</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>No events found.</p>
+    {% endif %}
+  </div>
+</body>
+</html>
