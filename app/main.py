@@ -1,4 +1,7 @@
 from flask import Blueprint, jsonify, request, render_template
+from datetime import datetime
+from app import db
+from models.model import Event, EventMode, User
 
 # Main Blueprint
 main_blueprint = Blueprint("main", __name__)
@@ -23,34 +26,92 @@ events_blueprint = Blueprint("events", __name__, url_prefix="/events")
 
 @events_blueprint.route("/", methods=["GET"])
 def list_events():
-    """
-    Retrieve all events.
-    Optional query params: ?upcoming=true or ?limit=10
-    """
-    return jsonify({"message": "List of all events"}), 200
+    events = Event.query.all()
+
+    data = [
+        {
+            "title": event.title,
+            "description": event.description,
+            "date": event.date.strftime("%Y-%m-%d"),
+            "time": event.time.strftime("%H:%M") if event.time else None,
+            "mode": event.mode.value,
+            "venue": event.venue,
+            "capacity": event.capacity
+        }
+        for event in events
+    ]
+
+    return jsonify(data), 200
 
 @events_blueprint.route("/", methods=["POST"])
 def create_event():
-    """
-    Create a new event.
-    Expected JSON:
-    {
-        "name": "Tech Conference",
-        "date": "2025-11-10T10:00:00",
-        "capacity": 100
-    }
-    """
-    return jsonify({"message": "Event created successfully"}), 201
+    data = request.get_json()
+
+    event = Event(
+        title=data.get("title"),
+        description=data.get("description"),
+        date=datetime.fromisoformat(data["date"]).date(),
+        time=datetime.strptime(data["time"], "%H:%M").time() if data.get("time") else None,
+        mode=EventMode(data["mode"].lower()),
+        venue=data.get("venue"),
+        capacity=int(data.get("capacity", 100)),
+        organizer_id=data.get("organizer_id")
+    )
+
+    db.session.add(event)
+    db.session.commit()
+
+    return jsonify({"message": "Event created successfully", "event_id": event.id}), 201
+
 
 @events_blueprint.route("/<int:event_id>", methods=["GET"])
 def get_event(event_id):
     """Fetch details for a specific event."""
-    return jsonify({"message": f"Details for event {event_id}"}), 200
+    event = Event.query.get(event_id)
+
+    if not event:
+        return jsonify({"error": "Event not found"}), 404
+
+    data = {
+        "id": event.id,
+        "title": event.title,
+        "description": event.description,
+        "date": event.date.strftime("%Y-%m-%d"),
+        "time": event.time.strftime("%H:%M") if event.time else None,
+        "mode": event.mode.value,
+        "venue": event.venue,
+        "capacity": event.capacity
+    }
+
+    return jsonify(data), 200
 
 @events_blueprint.route("/<int:event_id>", methods=["PUT"])
 def update_event(event_id):
     """Replace full event details."""
-    return jsonify({"message": f"Event {event_id} updated"}), 200
+    data = request.get_json()
+    event = Event.query.get(event_id)
+
+    if not event:
+        return jsonify({"error": "Event not found"}), 404
+
+    # Convert string inputs to proper Python types
+    event.title = data.get("title")
+    event.description = data.get("description")
+
+    # Parse date and time safely
+    event.date = datetime.strptime(data.get("date"), "%Y-%m-%d").date()
+    event.time = datetime.strptime(data.get("time"), "%H:%M").time()
+
+    # Handle enum value
+    mode_value = data.get("mode")
+    event.mode = EventMode(mode_value) if mode_value in EventMode._value2member_map_ else EventMode.online
+
+    event.venue = data.get("venue")
+    event.capacity = int(data.get("capacity"))
+
+    db.session.commit()
+
+    return jsonify({"message": f"Event {event_id} updated successfully"}), 200
 
 @events_blueprint.route("/<int:event_id>", methods=["PATCH"])
 def partial_update_event(event_id):

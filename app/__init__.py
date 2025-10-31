@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, app
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
@@ -22,5 +22,9 @@ def create_app():
     
     from .auth import auth_blueprint
     app.register_blueprint(auth_blueprint)
+
+    from .main import events_blueprint, attendees_blueprint
+    app.register_blueprint(events_blueprint)
+    app.register_blueprint(attendees_blueprint)
 
     return app
