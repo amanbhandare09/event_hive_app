@@ -14,7 +14,10 @@ def index():
 @main_blueprint.route("/profile", methods=["GET"])
 def profile():
     """Display user profile"""
-    return render_template("profile.html"), 200
+
+    events  = Event.query.all()
+
+    return render_template("profile.html", events=events), 200
 
 @main_blueprint.route("/api/health", methods=["GET"])
 def api_health():
@@ -28,22 +31,24 @@ events_blueprint = Blueprint("events", __name__, url_prefix="/events")
 def list_events():
     events = Event.query.all()
 
-    data = [
-        {
-            "title": event.title,
-            "description": event.description,
-            "date": event.date.strftime("%Y-%m-%d"),
-            "time": event.time.strftime("%H:%M") if event.time else None,
-            "mode": event.mode.value,
-            "venue": event.venue,
-            "capacity": event.capacity
-        }
-        for event in events
-    ]
+    print(events)
 
-    return jsonify(data), 200
+    # data = [
+    #     {
+    #         "title": event.title,
+    #         "description": event.description,
+    #         "date": event.date.strftime("%Y-%m-%d"),
+    #         "time": event.time.strftime("%H:%M") if event.time else None,
+    #         "mode": event.mode.value,
+    #         "venue": event.venue,
+    #         "capacity": event.capacity
+    #     }
+    #     for event in events
+    # ]
 
-@events_blueprint.route("/", methods=["POST"])
+    return render_template('profile.html', events=events), 200
+
+@events_blueprint.route("/create", methods=["POST"])
 def create_event():
     data = request.get_json()
 

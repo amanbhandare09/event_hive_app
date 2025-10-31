@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 import enum
 from app import db
 from flask_login import UserMixin
+
 # Association table for many-to-many relationship
 event_attendees = db.Table(
     "event_attendees",
@@ -26,8 +27,9 @@ class Event(db.Model):
     venue = db.Column(db.String(150))
     capacity = db.Column(db.Integer, default=100)
 
+    # Link to creator (User)
     organizer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    organizer = db.relationship("User", back_populates="created_events")
+    creator = db.relationship("User", backref=db.backref("created_events", lazy=True))
 
     attendees = db.relationship(
         "User", secondary=event_attendees, back_populates="attending_events"
@@ -36,7 +38,8 @@ class Event(db.Model):
     def __repr__(self):
         return f"<Event {self.title}>"
     
-class User(db.Model,UserMixin):
+
+class User(db.Model, UserMixin):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -44,12 +47,9 @@ class User(db.Model,UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
 
-    # One-to-many: user can create multiple events
-    created_events = db.relationship("Event", back_populates="organizer")
-
     # Many-to-many: user can attend multiple events
     attending_events = db.relationship(
-        "Event", secondary="event_attendees", back_populates="attendees"
+        "Event", secondary=event_attendees, back_populates="attendees"
     )
 
     def __repr__(self):

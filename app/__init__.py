@@ -25,9 +25,6 @@ def create_app():
         return User.query.get(int(user_id))
 
 
-    with app.app_context():
-        db.create_all()
-
     from .main import main_blueprint
     app.register_blueprint(main_blueprint)
     

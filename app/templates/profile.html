@@ -90,11 +90,12 @@
       <!-- <img src="{{ url_for('static', filename='images/user_logo.png') }}" alt="User Logo"> -->
     </div>
   </header>
-
+  
   <div class="event-container">
     <h2>All Events</h2>
 
     {% if events %}
+    
       {% for event in events %}
         <div class="event-card">
           <div class="event-title">{{ event.title }}</div>
