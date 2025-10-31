@@ -2,7 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import enum
 from app import db
-
+from flask_login import UserMixin
 # Association table for many-to-many relationship
 event_attendees = db.Table(
     "event_attendees",
@@ -36,7 +36,7 @@ class Event(db.Model):
     def __repr__(self):
         return f"<Event {self.title}>"
     
-class User(db.Model):
+class User(db.Model,UserMixin):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
