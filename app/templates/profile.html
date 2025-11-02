@@ -126,9 +126,13 @@
           {% if event.creator.id == current_user.id %}
             <div class="created-by-you">Created by you</div>
           {% endif %}
+
+          <p>DEBUG: {{ event }}</p>
+          <p>ID: {{ event.id }}</p>
+
           
      <form action="{{ url_for('attendees.create_attendee') }}" method="POST">
-     <input type="hidden" name="event_id" value="{{ event.event_id }}">
+     <input type="hidden" name="eventId" value="{{ event.id }}">
      <button type="submit" class="register-btn">Register</button>
      </form>
         </div>

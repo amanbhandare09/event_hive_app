@@ -1,5 +1,7 @@
-from flask import Blueprint, jsonify, request, render_template
+from flask import Blueprint, flash, jsonify, redirect, request, render_template, url_for
 from datetime import datetime
+
+from flask_login import current_user, login_required
 from app import db
 from models.model import Event, EventMode, User
 
@@ -144,27 +146,61 @@ def delete_event(event_id):
 # Attendees Blueprint
 attendees_blueprint = Blueprint("attendees", __name__)
 
-@attendees_blueprint.route("/", methods=["GET"])
-def list_attendees():
-    """Retrieve a list of all attendees."""
-    return jsonify({"message": "List of all attendees"}), 200
+# @attendees_blueprint.route("/list_attendees", methods=["GET"])
+# def list_attendees():
+#     """Retrieve a list of all attendees."""
+#     return jsonify({"message": "List of all attendees"}), 200
 
 @attendees_blueprint.route("/register", methods=["POST"])
+@login_required
 def create_attendee():
-    """
-    Register a new attendee.
-    Expected JSON:
-    {
-        "name": "John Doe",
-        "email": "john@example.com"
-    }
-    """
-    return render_template("register.html"), 201
+    
+    eventId = request.form.get("eventId")
+    print("FORM DATA:", request.form)
+    if not eventId:
+        return "eventId missing", 400
 
-@attendees_blueprint.route("/<int:attendee_id>", methods=["GET"])
+    event = Event.query.get(eventId)   # ✅ FIXED
+
+    if not event:
+        return "event not found", 404
+
+    # Add user to event
+    event.attendees.append(current_user)
+    event.capacity -= 1
+    db.session.commit()
+
+    return f"User {current_user.id} registered for event {event.title}", 201
+
+
+#Not working for users registered for events
+@attendees_blueprint.route("/attendee/<int:attendee_id>", methods=["GET"])
 def get_attendee(attendee_id):
-    """Fetch details for a specific attendee."""
-    return jsonify({"message": f"Details for attendee {attendee_id}"}), 200
+    user = User.query.get(attendee_id)
+    if not user:
+        return jsonify({"error": "Attendee not found"}), 404
+
+    events = [
+        {
+            "event_id": e.id,
+            "title": e.title,
+            "date": e.date.strftime("%Y-%m-%d") if e.date else None,
+            "time": e.time.strftime("%H:%M") if e.time else None,
+            "venue": e.venue,
+            "mode": e.mode.value if e.mode else None,
+            "organizer": e.organizer.username if e.organizer else None
+        }
+        for e in user.attending_events
+    ]
+
+    return jsonify({
+        "attendee_id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "registered_events_count": len(events),
+        "registered_events": events
+    }), 200
+
 
 @attendees_blueprint.route("/<int:attendee_id>", methods=["PUT"])
 def update_attendee(attendee_id):
