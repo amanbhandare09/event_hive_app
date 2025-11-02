@@ -69,11 +69,11 @@
 </head>
 <body>
   <div class="register-box">
-    <h2>Register for {{ event.title }}</h2>
+    <!-- <h2>Register for {{ event.title }}</h2> -->
     <p>Would you like to register for this event?</p>
 
-    <a href="{{ url_for('main.confirm_registration', event_id=event.id, decision='yes') }}" class="btn yes-btn">Yes, Register</a>
-    <a href="{{ url_for('main.confirm_registration', event_id=event.id, decision='no') }}" class="btn no-btn">No, Maybe Later</a>
+    <a href="{{ url_for('main.confirm_registration', event_id=event_id, decision='yes') }}" class="btn yes-btn">Yes, Register</a>
+    <a href="{{ url_for('main.confirm_registration', event_id=event_id, decision='no') }}" class="btn no-btn">No, Maybe Later</a>
   </div>
 </body>
 </html>

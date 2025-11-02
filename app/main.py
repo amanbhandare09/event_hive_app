@@ -149,7 +149,7 @@ def list_attendees():
     """Retrieve a list of all attendees."""
     return jsonify({"message": "List of all attendees"}), 200
 
-@attendees_blueprint.route("/", methods=["POST"])
+@attendees_blueprint.route("/register", methods=["POST"])
 def create_attendee():
     """
     Register a new attendee.
