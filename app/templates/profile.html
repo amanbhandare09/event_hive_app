@@ -80,6 +80,24 @@
       border-radius: 8px;
       font-size: 13px;
     }
+
+    .register-btn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 10px 18px;
+  background-color: #4CAF50;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.register-btn:hover {
+  background-color: #45a049;
+}
+
   </style>
 </head>
 <body>
@@ -102,15 +120,22 @@
           <div class="event-meta">
             Hosted by <strong>{{ event.creator.username }}</strong> | 
             Date: {{ event.date.strftime('%d %b %Y') }} | 
-            Location: {{ event.location }}
+            Location: {{ event.venue }}
           </div>
 
           {% if event.creator.id == current_user.id %}
             <div class="created-by-you">Created by you</div>
           {% endif %}
         </div>
+        {% if event.creator.id == current_user.id %}
+       <div class="created-by-you">Created by you</div>
+      {% endif %}
+
+   <!-- ✅ Add this button -->
+     <a href="{{ url_for('main.create_attendee', event_id=event.event_id) }}" class="register-btn">Register / View</a>
+
       {% endfor %}
-    {% else %}
+      {% else %}
       <p>No events found.</p>
     {% endif %}
   </div>

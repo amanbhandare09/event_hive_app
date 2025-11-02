@@ -5,11 +5,13 @@ from models.model import Event, EventMode, User
 
 # Main Blueprint
 main_blueprint = Blueprint("main", __name__)
+events_blueprint = Blueprint("events", __name__)
+
 
 @main_blueprint.route("/", methods=["GET"])
 def index():
     """Render the homepage"""
-    return render_template("index.html")
+    pass
 
 @main_blueprint.route("/profile", methods=["GET"])
 def profile():
@@ -118,29 +120,29 @@ def update_event(event_id):
 
     return jsonify({"message": f"Event {event_id} updated successfully"}), 200
 
-@events_blueprint.route("/<int:event_id>", methods=["PATCH"])
-def partial_update_event(event_id):
-    """Partially update an event (e.g., capacity or title)."""
-    return jsonify({"message": f"Event {event_id} partially updated"}), 200
+# @events_blueprint.route("/<int:event_id>", methods=["PATCH"])
+# def partial_update_event(event_id):
+#     """Partially update an event (e.g., capacity or title)."""
+#     return jsonify({"message": f"Event {event_id} partially updated"}), 200
 
 @events_blueprint.route("/<int:event_id>", methods=["DELETE"])
 def delete_event(event_id):
     """Delete a specific event."""
     return jsonify({"message": f"Event {event_id} deleted"}), 200
 
-@events_blueprint.route("/upcoming", methods=["GET"])
-def upcoming_events():
-    """List upcoming events (next 7 days, by default)."""
-    return jsonify({"message": "Upcoming events list"}), 200
+# @events_blueprint.route("/upcoming", methods=["GET"])
+# def upcoming_events():
+#     """List upcoming events (next 7 days, by default)."""
+#     return jsonify({"message": "Upcoming events list"}), 200
 
-@events_blueprint.route("/<int:event_id>/attendees", methods=["GET"])
-def event_attendees(event_id):
-    """List all attendees registered for a given event."""
-    return jsonify({"message": f"Attendees for event {event_id}"}), 200
+# @events_blueprint.route("/<int:event_id>/attendees", methods=["GET"])
+# def event_attendees(event_id):
+#     """List all attendees registered for a given event."""
+#     return jsonify({"message": f"Attendees for event {event_id}"}), 200
 
 
 # Attendees Blueprint
-attendees_blueprint = Blueprint("attendees", __name__, url_prefix="/attendees")
+attendees_blueprint = Blueprint("attendees", __name__)
 
 @attendees_blueprint.route("/", methods=["GET"])
 def list_attendees():
@@ -157,7 +159,7 @@ def create_attendee():
         "email": "john@example.com"
     }
     """
-    return jsonify({"message": "Attendee registered successfully"}), 201
+    return render_template("register.html"), 201
 
 @attendees_blueprint.route("/<int:attendee_id>", methods=["GET"])
 def get_attendee(attendee_id):
@@ -169,7 +171,7 @@ def update_attendee(attendee_id):
     """Update full attendee record."""
     return jsonify({"message": f"Attendee {attendee_id} updated"}), 200
 
-@attendees_blueprint.route("/<int:attendee_id>/events", methods=["GET"])
-def attendee_events(attendee_id):
-    """List events the attendee is registered for."""
-    return jsonify({"message": f"Events for attendee {attendee_id}"}), 200
+# @attendees_blueprint.route("/<int:attendee_id>/events", methods=["GET"])
+# def attendee_events(attendee_id):
+#     """List events the attendee is registered for."""
+#     return jsonify({"message": f"Events for attendee {attendee_id}"}), 200
