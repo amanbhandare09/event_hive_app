@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Events | EventHive</title>
+  <title>Welcome | EventHive</title>
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -11,126 +11,59 @@
       color: #f0f0f0;
       margin: 0;
       padding: 0;
-    }
-
-    header {
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
+      justify-content: center;
       align-items: center;
-      background-color: #111;
-      padding: 15px 40px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      height: 100vh;
+      text-align: center;
     }
 
-    .logo {
-      font-size: 24px;
-      font-weight: bold;
+    h1 {
+      font-size: 64px;
+      font-weight: 800;
       color: #4CAF50;
-    }
-
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-
-    .user-info img {
-      width: 45px;
-      height: 45px;
-      border-radius: 50%;
-      border: 2px solid #4CAF50;
-    }
-
-    .event-container {
-      max-width: 900px;
-      margin: 40px auto;
-      padding: 20px;
-    }
-
-    .event-card {
-      background-color: #1a1a1a;
-      border-left: 5px solid #4CAF50;
-      border-radius: 12px;
       margin-bottom: 20px;
-      padding: 20px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-      transition: transform 0.2s;
+      text-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
+      letter-spacing: 2px;
     }
 
-    .event-card:hover {
-      transform: translateY(-3px);
+    p {
+      font-size: 18px;
+      color: #ccc;
+      margin-bottom: 40px;
     }
 
-    .event-title {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-
-    .event-meta {
-      color: #aaa;
-      font-size: 14px;
-      margin-bottom: 12px;
-    }
-
-    .created-by-you {
-      background: #003300;
-      color: #4CAF50;
-      padding: 5px 10px;
-      border-radius: 8px;
-      font-size: 13px;
-      display: inline-block;
-      margin-bottom: 10px;
-    }
-
-    .register-btn,
-    .attendees-btn {
-      display: inline-block;
-      margin-top: 10px;
-      margin-right: 10px;
-      padding: 10px 18px;
+    .login-btn {
       background-color: #4CAF50;
       color: #fff;
       border: none;
+      padding: 14px 32px;
+      font-size: 18px;
       border-radius: 8px;
-      text-decoration: none;
-      font-weight: 500;
       cursor: pointer;
-      transition: background-color 0.3s;
+      text-decoration: none;
+      transition: background-color 0.3s, transform 0.2s;
     }
 
-    .register-btn:hover,
-    .attendees-btn:hover {
+    .login-btn:hover {
       background-color: #45a049;
+      transform: translateY(-3px);
     }
 
+    footer {
+      position: absolute;
+      bottom: 20px;
+      color: #777;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
-  <header>
-    <div class="logo">EventHive</div>
-    <div class="user-info">
-  </header>
-  
-  <div class="event-container">
-    <h2>All Events</h2>
+  <h1>EventHive</h1>
+  <p>Organize. Attend. Connect — Your world of events starts here.</p>
+  <a href="{{ url_for('auth.login') }}" class="login-btn">Login</a>
 
-    {% if events %}
-      {% for event in events %}
-        <div class="event-card">
-          <div class="event-title">{{ event.title }}</div>
-          <div class="event-meta">
-            Hosted by <strong>{{ event.creator.username }}</strong> | 
-            Date: {{ event.date.strftime('%d %b %Y') }} | 
-            Location: {{ event.venue }}
-          </div>
-      
-          </a>
-        </div>
-      {% endfor %}
-    {% else %}
-      <p>No events found.</p>
-    {% endif %}
-  </div>
+  <footer>© 2025 EventHive. All rights reserved.</footer>
 </body>
 </html>
