@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Attendees for {{ event.title }}</title>
+  <style>
+    body {
+      background: #0a0a0a;
+      color: #f0f0f0;
+      font-family: 'Poppins', sans-serif;
+      text-align: center;
+      padding: 30px;
+    }
+    h1 { color: #4CAF50; }
+    ul { list-style: none; padding: 0; }
+    li { margin: 10px 0; padding: 10px; background: #1a1a1a; border-radius: 8px; }
+  </style>
+</head>
+<body>
+    <h1>{{ event.title }}</h1>
+    <p><strong>Date:</strong> {{ event.date }}</p>
+    <p><strong>Mode:</strong> {{ event.mode}}</p>
+
+    <h3>Attendees:</h3>
+    {% if event.attendees %}
+        <ul>
+            {% for attendee in event.attendees %}
+                <li>{{ attendee.username }} ({{ attendee.email }})</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No attendees yet.</p>
+    {% endif %}
+</body>
+</html>

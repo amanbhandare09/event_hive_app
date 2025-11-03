@@ -83,11 +83,8 @@
       margin-bottom: 10px;
     }
 
-    /* Buttons */
     .register-btn,
-    .attendees-btn,
-    .delete-btn,
-    .update-btn {
+    .attendees-btn {
       display: inline-block;
       margin-top: 10px;
       margin-right: 10px;
@@ -103,32 +100,9 @@
     }
 
     .register-btn:hover,
-    .attendees-btn:hover,
-    .update-btn:hover {
+    .attendees-btn:hover {
       background-color: #45a049;
     }
-
-    .delete-btn {
-      background-color: #d9534f;
-    }
-
-    .delete-btn:hover {
-      background-color: #c9302c;
-    }
-    .create-event-btn {
-  background-color: #4CAF50;
-  color: #fff;
-  padding: 10px 16px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: 500;
-  transition: background-color 0.3s;
-}
-
-.create-event-btn:hover {
-  background-color: #45a049;
-}
-
 
   </style>
 </head>
@@ -136,12 +110,8 @@
   <header>
     <div class="logo">EventHive</div>
     <div class="user-info">
-      <span>{{ current_user.username }}</span>
-      <a href="{{ url_for('events.create_event') }}" class="create-event-btn">+ Create Event</a>
-      <!-- <img src="{{ url_for('static', filename='images/user_logo.png') }}" alt="User Logo"> -->
-    </div>
   </header>
-
+  
   <div class="event-container">
     <h2>All Events</h2>
 
@@ -154,29 +124,7 @@
             Date: {{ event.date.strftime('%d %b %Y') }} | 
             Location: {{ event.venue }}
           </div>
-
-          {% if event.creator.id == current_user.id %}
-            <div class="created-by-you">Created by you</div>
-
-            <!-- Delete Event Button -->
-            <form action="{{ url_for('events.delete_event', event_id=event.id) }}" method="POST" style="display:inline;">
-              <button type="submit" class="delete-btn">Delete</button>
-            </form>
-
-            <!-- Update Event Button -->
-            <a href="{{ url_for('events.update_event', event_id=event.id) }}" class="update-btn">Update</a>
-
-          {% else %}
-            <!-- Register Button (Only for other users) -->
-            <form action="{{ url_for('attendees.create_attendee') }}" method="POST" style="display:inline;">
-              <input type="hidden" name="eventId" value="{{ event.id }}">
-              <button type="submit" class="register-btn">Register</button>
-            </form>
-          {% endif %}
-
-          <!-- View Attendees Button -->
-          <a href="{{ url_for('attendees.get_attendee', attendee_id=current_user.id) }}" class="attendees-btn">
-            View Attendees
+      
           </a>
         </div>
       {% endfor %}

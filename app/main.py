@@ -3,7 +3,7 @@ from datetime import datetime
 
 from flask_login import current_user, login_required
 from app import db
-from models.model import Event, EventMode, User
+from models.model import Event, EventMode, User,event_attendees
 
 # Main Blueprint
 main_blueprint = Blueprint("main", __name__)
@@ -13,8 +13,7 @@ events_blueprint = Blueprint("events", __name__)
 @main_blueprint.route("/", methods=["GET"])
 def index():
     """Render the homepage"""
-    pass
-
+    return render_template("index.html")
 @main_blueprint.route("/profile", methods=["GET"])
 def profile():
     """Display user profile"""
@@ -29,7 +28,7 @@ def api_health():
     return jsonify({"status": "healthy", "message": "API is running"}), 200
 
 # Events Blueprint
-events_blueprint = Blueprint("events", __name__, url_prefix="/events")
+events_blueprint = Blueprint("events", __name__)
 
 @events_blueprint.route("/", methods=["GET"])
 def list_events():
@@ -52,9 +51,20 @@ def list_events():
 
     return render_template('profile.html', events=events), 200
 
+# 🟢 Show Create Event Page
+@events_blueprint.route("/create", methods=["GET"])
+def create_event_page():
+    return render_template("create.html")
+
+# 🟢 Handle Create Event POST (from fetch() or form)
 @events_blueprint.route("/create", methods=["POST"])
 def create_event():
-    data = request.get_json()
+    # If request has JSON (from fetch)
+    if request.is_json:
+        data = request.get_json()
+    else:
+        # Fallback for normal HTML form submission
+        data = request.form
 
     event = Event(
         title=data.get("title"),
@@ -64,20 +74,25 @@ def create_event():
         mode=EventMode(data["mode"].lower()),
         venue=data.get("venue"),
         capacity=int(data.get("capacity", 100)),
-        organizer_id=data.get("organizer_id")
+        organizer_id=current_user.id
     )
 
     db.session.add(event)
     db.session.commit()
 
-    return jsonify({"message": "Event created successfully", "event_id": event.id}), 201
+    # If JSON (API) → return JSON
+    if request.is_json:
+        return jsonify({"message": "Event created successfully", "event_id": event.id}), 201
+    # Else redirect back to events list page
+    else:
+        return render_template("create.html", success=True)
 
 
 @events_blueprint.route("/<int:event_id>", methods=["GET"])
 def get_event(event_id):
     """Fetch details for a specific event."""
     event = Event.query.get(event_id)
-
+    attendees = event.attendee
     if not event:
         return jsonify({"error": "Event not found"}), 404
 
@@ -180,27 +195,20 @@ def get_attendee(attendee_id):
     if not user:
         return jsonify({"error": "Attendee not found"}), 404
 
-    events = [
-        {
+    events = []
+    for e in user.attending_events:
+        events.append({
             "event_id": e.id,
             "title": e.title,
             "date": e.date.strftime("%Y-%m-%d") if e.date else None,
             "time": e.time.strftime("%H:%M") if e.time else None,
             "venue": e.venue,
-            "mode": e.mode.value if e.mode else None,
-            "organizer": e.organizer.username if e.organizer else None
-        }
-        for e in user.attending_events
-    ]
+            "mode": EventMode.online, #e.mode.value if EventMode.mode else None,
+            # ✅ Use the relationship directly
+            "organizer": e.creator.username if e.creator else "Unknown"
+        })
 
-    return jsonify({
-        "attendee_id": user.id,
-        "username": user.username,
-        "email": user.email,
-        "registered_events_count": len(events),
-        "registered_events": events
-    }), 200
-
+    return render_template("eventattend.html", user=user, event=events), 200
 
 @attendees_blueprint.route("/<int:attendee_id>", methods=["PUT"])
 def update_attendee(attendee_id):

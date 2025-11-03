@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Event | EventHive</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(120deg, #0a0a0a, #003300);
+      color: #f0f0f0;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #111;
+      padding: 15px 40px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #4CAF50;
+    }
+
+    .form-container {
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: #1a1a1a;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    }
+
+    h2 {
+      text-align: center;
+      color: #4CAF50;
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: none;
+      border-radius: 6px;
+      background-color: #2a2a2a;
+      color: #fff;
+      font-size: 15px;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: 2px solid #4CAF50;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 16px;
+      font-weight: 500;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .message {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">EventHive</div>
+    <a href="{{ url_for('main.profile') }}" style="color:#4CAF50; text-decoration:none; font-weight:500;">Back to Events</a>
+  </header>
+
+  <div class="form-container">
+    <h2>Create a New Event</h2>
+    <form id="createEventForm">
+      <label for="title">Event Title</label>
+      <input type="text" id="title" name="title" required>
+
+      <label for="description">Description</label>
+      <textarea id="description" name="description" rows="4" required></textarea>
+
+      <label for="date">Date</label>
+      <input type="date" id="date" name="date" required>
+
+      <label for="time">Time</label>
+      <input type="time" id="time" name="time">
+
+      <label for="mode">Mode</label>
+      <select id="mode" name="mode" required>
+        <option value="online">Online</option>
+        <option value="offline">Offline</option>
+      </select>
+
+      <label for="venue">Venue</label>
+      <input type="text" id="venue" name="venue" required>
+
+      <label for="capacity">Capacity</label>
+      <input type="number" id="capacity" name="capacity" min="1" value="100">
+
+      <button type="submit">Create Event</button>
+    </form>
+
+    <div class="message" id="message"></div>
+  </div>
+
+  <script>
+    document.getElementById('createEventForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const data = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        date: document.getElementById('date').value,
+        time: document.getElementById('time').value,
+        mode: document.getElementById('mode').value,
+        venue: document.getElementById('venue').value,
+        capacity: document.getElementById('capacity').value,
+        organizer_id: {{ current_user.id }}
+      };
+
+      const response = await fetch("{{ url_for('events.create_event') }}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+      const messageEl = document.getElementById('message');
+
+      if (response.ok) {
+        messageEl.style.color = "#4CAF50";
+        messageEl.textContent = " Event created successfully!";
+        document.getElementById('createEventForm').reset();
+      } else {
+        messageEl.style.color = "red";
+        messageEl.textContent = " Failed to create event: " + (result.message || "Error");
+      }
+    });
+  </script>
+</body>
+</html>
