@@ -252,7 +252,7 @@ def create_attendee():
     event.capacity -= 1
 
     db.session.commit()
-    return jsonify({"message": f"User {current_user.username} registered for event {event.title}"}), 201
+    return redirect(url_for("main.profile"))
 
 
 
