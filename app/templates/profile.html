@@ -191,7 +191,7 @@
           {% endif %}
 
           <!-- View Attendees Button -->
-          <a href="{{ url_for('attendees.get_attendee', attendee_id=current_user.id) }}" class="attendees-btn">
+          <a href="{{ url_for('attendees.get_attendee', attendee_id=current_user.id, event_id = event.id) }}" class="attendees-btn">
             View Attendees
           </a>
         </div>

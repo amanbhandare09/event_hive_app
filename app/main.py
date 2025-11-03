@@ -216,26 +216,17 @@ def create_attendee():
 
 
 #Not working for users registered for events
-@attendees_blueprint.route("/attendee/<int:attendee_id>", methods=["GET"])
-def get_attendee(attendee_id):
-    user = User.query.get(attendee_id)
-    if not user:
-        return jsonify({"error": "Attendee not found"}), 404
+@attendees_blueprint.route("/attendee", methods=["GET"])
+def get_attendee(event_id):
+    """Display all attendees for a specific event."""
+    event = Event.query.get(event_id)
+    if not event:
+        return jsonify({"error": "Event not found"}), 404
 
-    events = []
-    for e in user.attending_events:
-        events.append({
-            "event_id": e.id,
-            "title": e.title,
-            "date": e.date.strftime("%Y-%m-%d") if e.date else None,
-            "time": e.time.strftime("%H:%M") if e.time else None,
-            "venue": e.venue,
-            "mode": EventMode.online, #e.mode.value if EventMode.mode else None,
-            # ✅ Use the relationship directly
-            "organizer": e.creator.username if e.creator else "Unknown"
-        })
+    attendees = event.attendees  # Using the relationship
 
-    return render_template("eventattend.html", user=user, event=events), 200
+    return render_template("eventattend.html", event=event, attendees=attendees), 200
+
 
 @attendees_blueprint.route("/unregister/<int:event_id>", methods=["POST"])
 @login_required
