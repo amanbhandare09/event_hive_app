@@ -222,9 +222,9 @@ def get_attendee(event_id):
     event = Event.query.get_or_404(event_id)
 
     # Only organizer or admin can see attendees
-    if event.organizer_id != current_user.id:
-        flash("You are not authorized to view attendees for this event.", "danger")
-        return redirect(url_for("events.all_events"))
+    # if event.organizer_id != current_user.id:
+    #     flash("You are not authorized to view attendees for this event.", "danger")
+    #     return redirect(url_for("events.all_events"))
 
     attendees = event.attendees
     return render_template("eventattend.html", event=event, attendees=attendees)
