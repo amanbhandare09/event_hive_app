@@ -142,10 +142,25 @@ def update_event(event_id):
 #     """Partially update an event (e.g., capacity or title)."""
 #     return jsonify({"message": f"Event {event_id} partially updated"}), 200
 
-@events_blueprint.route("/<int:event_id>", methods=["DELETE"])
+@events_blueprint.route("/<int:event_id>", methods=["DELETE", "POST"])
+@login_required
 def delete_event(event_id):
-    """Delete a specific event."""
-    return jsonify({"message": f"Event {event_id} deleted"}), 200
+    """Delete a specific event if the current user is the creator."""
+    event = Event.query.get_or_404(event_id)
+
+    # ✅ Ensure only the event creator can delete
+    if event.organizer_id != current_user.id:
+        return jsonify({"error": "Unauthorized: You can only delete your own events."}), 403
+
+    # ✅ Delete the event
+    db.session.delete(event)
+    db.session.commit()
+
+    # ✅ Return response (supports API + HTML redirect)
+    if "application/json" in str(request.headers.get("Accept")):
+        return jsonify({"message": f"Event {event_id} deleted successfully"}), 200
+    else:
+        return redirect(url_for("main.profile"))
 
 # @events_blueprint.route("/upcoming", methods=["GET"])
 # def upcoming_events():
@@ -169,23 +184,35 @@ attendees_blueprint = Blueprint("attendees", __name__)
 @attendees_blueprint.route("/register", methods=["POST"])
 @login_required
 def create_attendee():
-    
     eventId = request.form.get("eventId")
     print("FORM DATA:", request.form)
+
     if not eventId:
         return "eventId missing", 400
 
-    event = Event.query.get(eventId)   # ✅ FIXED
-
+    event = Event.query.get(eventId)
     if not event:
         return "event not found", 404
 
-    # Add user to event
+    # ✅ Prevent duplicate registration
+    if current_user in event.attendees:
+        return jsonify({"error": "Already registered for this event"}), 400
+
+    # ✅ Prevent organizer from registering for their own event
+    if event.organizer_id == current_user.id:
+        return jsonify({"error": "You cannot register for your own event"}), 400
+
+    # ✅ Check if event still has capacity
+    if event.capacity <= 0:
+        return jsonify({"error": "Event is full"}), 400
+
+    # ✅ Add user to event
     event.attendees.append(current_user)
     event.capacity -= 1
-    db.session.commit()
 
-    return f"User {current_user.id} registered for event {event.title}", 201
+    db.session.commit()
+    return jsonify({"message": f"User {current_user.username} registered for event {event.title}"}), 201
+
 
 
 #Not working for users registered for events
