@@ -237,11 +237,19 @@ def get_attendee(attendee_id):
 
     return render_template("eventattend.html", user=user, event=events), 200
 
-@attendees_blueprint.route("/<int:attendee_id>", methods=["PUT"])
-def update_attendee(attendee_id):
-    """Update full attendee record."""
-    return jsonify({"message": f"Attendee {attendee_id} updated"}), 200
+@attendees_blueprint.route("/unregister/<int:event_id>", methods=["POST"])
+@login_required
+def unregister_attendee(event_id):
+    """Unregister the current user from a given event."""
+    event = Event.query.get_or_404(event_id)
 
+    if current_user not in event.attendees:
+        return jsonify({"message": "You are not registered for this event"}), 400
+
+    event.attendees.remove(current_user)
+    db.session.commit()
+
+    return redirect(url_for("main.profile"))
 # @attendees_blueprint.route("/<int:attendee_id>/events", methods=["GET"])
 # def attendee_events(attendee_id):
 #     """List events the attendee is registered for."""
