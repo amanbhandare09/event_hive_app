@@ -108,34 +108,41 @@ def get_event(event_id):
     }
 
     return jsonify(data), 200
-
-@events_blueprint.route("/<int:event_id>", methods=["PUT"])
-def update_event(event_id):
-    """Replace full event details."""
-    data = request.get_json()
+@events_blueprint.route("/update_event/<int:event_id>", methods=["GET"])
+def load_update_event_page(event_id):
     event = Event.query.get(event_id)
-
     if not event:
-        return jsonify({"error": "Event not found"}), 404
+        return "Event Not Found", 404
+    
+    return render_template("update.html", event=event)
 
-    # Convert string inputs to proper Python types
-    event.title = data.get("title")
-    event.description = data.get("description")
 
-    # Parse date and time safely
-    event.date = datetime.strptime(data.get("date"), "%Y-%m-%d").date()
-    event.time = datetime.strptime(data.get("time"), "%H:%M").time()
+@events_blueprint.route("/update_event/<int:event_id>", methods=["POST"])
+def update_event(event_id):
+    event = Event.query.get(event_id)
+    if not event:
+        return jsonify({"message": "Event not found"}), 404
+    
+    try:
+        data = request.get_json()
+        
+        # Update event fields
+        event.title = data.get("title")
+        event.description = data.get("description")
+        event.date = datetime.strptime(data.get("date"), "%Y-%m-%d").date()
+        event.time = datetime.strptime(data.get("time"), "%H:%M").time() if data.get("time") else None
+        event.mode = EventMode(data.get("mode"))
+        event.venue = data.get("venue")
+        event.capacity = int(data.get("capacity"))
+        
+        db.session.commit()
+        
+        return jsonify({"message": "Event updated successfully"}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": str(e)}), 400
 
-    # Handle enum value
-    mode_value = data.get("mode")
-    event.mode = EventMode(mode_value) if mode_value in EventMode._value2member_map_ else EventMode.online
-
-    event.venue = data.get("venue")
-    event.capacity = int(data.get("capacity"))
-
-    db.session.commit()
-
-    return jsonify({"message": f"Event {event_id} updated successfully"}), 200
 
 # @events_blueprint.route("/<int:event_id>", methods=["PATCH"])
 # def partial_update_event(event_id):
@@ -161,6 +168,40 @@ def delete_event(event_id):
         return jsonify({"message": f"Event {event_id} deleted successfully"}), 200
     else:
         return redirect(url_for("main.profile"))
+
+# @events_blueprint.route("/event_update/<int:event_id>", methods=["GET"])
+# @login_required
+# def load_update_event_page(event_id):
+#     event = Event.query.get_or_404(event_id)
+
+#     if event.organizer_id != current_user.id:
+#         return "Unauthorized", 403
+
+#     return render_template("update.html", event=event)
+
+
+# @events_blueprint.route("/event_update/<int:event_id>", methods=["PUT"])
+# @login_required
+# def update_event(event_id):
+#     event = Event.query.get_or_404(event_id)
+
+#     if event.organizer_id != current_user.id:
+#         return "Unauthorized", 403
+
+#     event.title = request.form.get("title")
+#     event.description = request.form.get("description")
+#     event.date = request.form.get("date")
+#     event.time = request.form.get("time")
+#     event.mode = request.form.get("mode")
+#     event.venue = request.form.get("venue")
+#     event.capacity = request.form.get("capacity")
+
+#     db.session.commit()
+
+#     return redirect(url_for("events.load_update_event_page", event_id=event_id))
+
+
+
 
 # @events_blueprint.route("/upcoming", methods=["GET"])
 # def upcoming_events():
@@ -237,10 +278,10 @@ def get_attendee(attendee_id):
 
     return render_template("eventattend.html", user=user, event=events), 200
 
-@attendees_blueprint.route("/<int:attendee_id>", methods=["PUT"])
-def update_attendee(attendee_id):
-    """Update full attendee record."""
-    return jsonify({"message": f"Attendee {attendee_id} updated"}), 200
+# @attendees_blueprint.route("/<int:attendee_id>", methods=["PUT"])
+# def update_attendee(attendee_id):
+#     """Update full attendee record."""
+#     return jsonify({"message": f"Attendee {attendee_id} updated"}), 200
 
 # @attendees_blueprint.route("/<int:attendee_id>/events", methods=["GET"])
 # def attendee_events(attendee_id):
