@@ -5,31 +5,90 @@
   <title>Attendees for {{ event.title }}</title>
   <style>
     body {
-      background: #0a0a0a;
+      background: linear-gradient(120deg, #0a0a0a, #003300);
       color: #f0f0f0;
       font-family: 'Poppins', sans-serif;
       text-align: center;
       padding: 30px;
+      margin: 0;
     }
-    h1 { color: #4CAF50; }
-    ul { list-style: none; padding: 0; }
-    li { margin: 10px 0; padding: 10px; background: #1a1a1a; border-radius: 8px; }
+
+    h1 {
+      color: #4CAF50;
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .event-info {
+      margin-bottom: 30px;
+      color: #bbb;
+      font-size: 15px;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      max-width: 500px;
+      margin: 0 auto;
+      background: #1a1a1a;
+      border-radius: 12px;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    }
+
+    li {
+      margin: 8px 0;
+      padding: 12px;
+      background: #111;
+      border-radius: 8px;
+      border-left: 4px solid #4CAF50;
+      transition: background-color 0.2s;
+    }
+
+    li:hover {
+      background-color: #222;
+    }
+
+    .no-attendees {
+      font-size: 16px;
+      color: #999;
+      margin-top: 20px;
+    }
+
+    a.back-btn {
+      display: inline-block;
+      margin-top: 25px;
+      padding: 10px 16px;
+      background-color: #4CAF50;
+      color: #fff;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background-color 0.3s;
+    }
+
+    a.back-btn:hover {
+      background-color: #45a049;
+    }
   </style>
 </head>
 <body>
-    <h1>{{ event.title }}</h1>
-    <!-- <p><strong>Date:</strong> {{ event.date }}</p>
-    <p><strong>Mode:</strong> {{ event.mode}}</p> -->
+  <h1>{{ event.title }}</h1>
+  <div class="event-info">
+    <p><strong>Date:</strong> {{ event.date.strftime('%d %b %Y') }}</p>
+    <p><strong>Mode:</strong> {{ event.mode.value|capitalize }}</p>
+    <p><strong>Venue:</strong> {{ event.venue }}</p>
+  </div>
 
-    <h3>Attendees:</h3>
-    {% if event.attendees %}
-        <ul>
-            {% for attendee in event.attendees %}
-                <li>{{ attendee.username }} ({{ attendee.email }})</li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No attendees yet.</p>
-    {% endif %}
+  <h3>Attendees:</h3>
+  {% if attendees %}
+    <ul>
+      {% for attendee in attendees %}
+        <li><strong>{{ attendee.username }}</strong> ({{ attendee.email }})</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="no-attendees">No attendees yet.</p>
+  {% endif %}
+
+  <a href="{{ url_for('main.profile') }}" class="back-btn">← Back to Events</a>
 </body>
 </html>

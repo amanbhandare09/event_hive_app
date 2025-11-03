@@ -257,27 +257,34 @@ def create_attendee():
 
 
 #Not working for users registered for events
-@attendees_blueprint.route("/attendee/<int:attendee_id>", methods=["GET"])
-def get_attendee(attendee_id):
-    user = User.query.get(attendee_id)
-    if not user:
-        return jsonify({"error": "Attendee not found"}), 404
+@attendees_blueprint.route("/event/<int:event_id>/attendees", methods=["GET"])
+def get_attendee(event_id):
+    """Display all attendees for a specific event."""
+    event = Event.query.get_or_404(event_id)
 
-    events = []
-    for e in user.attending_events:
-        events.append({
-            "event_id": e.id,
-            "title": e.title,
-            "date": e.date.strftime("%Y-%m-%d") if e.date else None,
-            "time": e.time.strftime("%H:%M") if e.time else None,
-            "venue": e.venue,
-            "mode": EventMode.online, #e.mode.value if EventMode.mode else None,
-            # ✅ Use the relationship directly
-            "organizer": e.creator.username if e.creator else "Unknown"
-        })
+    # Only organizer or admin can see attendees
+    # if event.organizer_id != current_user.id:
+    #     flash("You are not authorized to view attendees for this event.", "danger")
+    #     return redirect(url_for("events.all_events"))
 
-    return render_template("eventattend.html", user=user, event=events), 200
+    attendees = event.attendees
+    return render_template("eventattend.html", event=event, attendees=attendees)
 
+
+
+@attendees_blueprint.route("/unregister/<int:event_id>", methods=["POST"])
+@login_required
+def unregister_attendee(event_id):
+    """Unregister the current user from a given event."""
+    event = Event.query.get_or_404(event_id)
+
+    if current_user not in event.attendees:
+        return jsonify({"message": "You are not registered for this event"}), 400
+
+    event.attendees.remove(current_user)
+    db.session.commit()
+
+    return redirect(url_for("main.profile"))
 # @attendees_blueprint.route("/<int:attendee_id>", methods=["PUT"])
 # def update_attendee(attendee_id):
 #     """Update full attendee record."""

@@ -176,15 +176,22 @@
             <a href="{{ url_for('events.update_event', event_id=event.id) }}" class="update-btn">Update</a>
 
           {% else %}
+          {% if current_user in event.attendees %}
+           <form action="{{ url_for('attendees.unregister_attendee', event_id=event.id) }}" method="POST" style="display:inline;">
+    <button type="submit" class="delete-btn">Unregister</button>
+  </form>
+          {% else %}
+
             <!-- Register Button (Only for other users) -->
             <form action="{{ url_for('attendees.create_attendee') }}" method="POST" style="display:inline;">
               <input type="hidden" name="eventId" value="{{ event.id }}">
               <button type="submit" class="register-btn">Register</button>
             </form>
+            {% endif %}
           {% endif %}
 
           <!-- View Attendees Button -->
-          <a href="{{ url_for('attendees.get_attendee', attendee_id=current_user.id) }}" class="attendees-btn">
+          <a href="{{ url_for('attendees.get_attendee', attendee_id=current_user.id, event_id = event.id) }}" class="attendees-btn">
             View Attendees
           </a>
         </div>
