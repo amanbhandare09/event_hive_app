@@ -66,4 +66,4 @@ def login_post():
 @auth_blueprint.route("/logout")
 @login_required
 def logout():
-    return "logout"
+    return render_template("login.html")

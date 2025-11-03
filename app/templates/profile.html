@@ -129,6 +129,14 @@
   background-color: #45a049;
 }
 
+   .logout-btn {
+       background-color: #45a049;
+      color: #fff;
+    }
+
+    .logout-btn:hover {
+      background-color: #45a049;
+    }
 
   </style>
 </head>
@@ -138,6 +146,7 @@
     <div class="user-info">
       <span>{{ current_user.username }}</span>
       <a href="{{ url_for('events.create_event') }}" class="create-event-btn">+ Create Event</a>
+      <a href="{{ url_for('auth.logout') }}" class="logout-btn">Logout</a>
       <!-- <img src="{{ url_for('static', filename='images/user_logo.png') }}" alt="User Logo"> -->
     </div>
   </header>
