@@ -216,16 +216,19 @@ def create_attendee():
 
 
 #Not working for users registered for events
-@attendees_blueprint.route("/attendee", methods=["GET"])
+@attendees_blueprint.route("/event/<int:event_id>/attendees", methods=["GET"])
 def get_attendee(event_id):
     """Display all attendees for a specific event."""
-    event = Event.query.get(event_id)
-    if not event:
-        return jsonify({"error": "Event not found"}), 404
+    event = Event.query.get_or_404(event_id)
 
-    attendees = event.attendees  # Using the relationship
+    # Only organizer or admin can see attendees
+    if event.organizer_id != current_user.id:
+        flash("You are not authorized to view attendees for this event.", "danger")
+        return redirect(url_for("events.all_events"))
 
-    return render_template("eventattend.html", event=event, attendees=attendees), 200
+    attendees = event.attendees
+    return render_template("eventattend.html", event=event, attendees=attendees)
+
 
 
 @attendees_blueprint.route("/unregister/<int:event_id>", methods=["POST"])
