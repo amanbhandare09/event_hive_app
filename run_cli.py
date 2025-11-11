@@ -2,6 +2,7 @@ import argparse
 import enum
 from datetime import datetime, timedelta
 from app import db,create_app
+from werkzeug.security import generate_password_hash,check_password_hash
 
 app=create_app()
 
@@ -79,6 +80,34 @@ def add_event(args):
         print(f"Event '{args.title}' added for {event_date} at {event_time}.")
 
 
+def create_user(args):
+    """Create a new user account."""
+    with app.app_context():
+        from models.model import User
+
+        existing_user = User.query.filter(
+            (User.username == args.username) | (User.email == args.email)
+        ).first()
+
+        if existing_user:
+            print("User with this username or email already exists.")
+            return
+
+        hashed_password = generate_password_hash(args.password)
+
+        users = User(
+            username=args.username,
+            email=args.email,
+            password=hashed_password
+        
+        )
+
+        db.session.add(users)
+        db.session.commit()
+        print(f"✅ User '{args.username}' created successfully!")
+
+
+
 def main():
     parser = argparse.ArgumentParser(description="Manage your Flask Event App")
     subparsers = parser.add_subparsers(help="Available commands")
@@ -102,6 +131,16 @@ def main():
     parser_add.add_argument("--venue", type=str, help="Venue for offline events")
     parser_add.add_argument("--description", type=str, help="Optional event description")
     parser_add.set_defaults(func=add_event)
+
+
+    parser_user = subparsers.add_parser("create-user", help="Create a new user")
+    parser_user.add_argument("username", type=str)
+    parser_user.add_argument("email", type=str)
+    parser_user.add_argument("password", type=str)
+    # parser_user.add_argument("--phone", type=str, default=None, help="Phone number")
+    # parser_user.add_argument("--address", type=str, default=None, help="Address")
+    parser_user.set_defaults(func=create_user)
+
 
     args = parser.parse_args()
 
