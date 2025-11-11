@@ -83,6 +83,27 @@
       margin-bottom: 10px;
     }
 
+    /* Visibility tag */
+    .visibility-tag {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-left: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .visibility-tag.public {
+      background-color: #2e7d32; /* Green for public */
+      color: #fff;
+    }
+
+    .visibility-tag.private {
+      background-color: #b71c1c; /* Red for private */
+      color: #fff;
+    }
+
     /* Buttons */
     .register-btn,
     .attendees-btn,
@@ -115,29 +136,34 @@
     .delete-btn:hover {
       background-color: #c9302c;
     }
+
     .create-event-btn {
-  background-color: #4CAF50;
-  color: #fff;
-  padding: 10px 16px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: 500;
-  transition: background-color 0.3s;
-}
-
-.create-event-btn:hover {
-  background-color: #45a049;
-}
-
-   .logout-btn {
-       background-color: #45a049;
+      background-color: #4CAF50;
       color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background-color 0.3s;
     }
 
-    .logout-btn:hover {
+    .create-event-btn:hover {
       background-color: #45a049;
     }
 
+    .logout-btn {
+      background-color: #45a049;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background-color 0.3s;
+    }
+
+    .logout-btn:hover {
+      background-color: #388e3c;
+    }
   </style>
 </head>
 <body>
@@ -147,7 +173,6 @@
       <span>{{ current_user.username }}</span>
       <a href="{{ url_for('events.create_event') }}" class="create-event-btn">+ Create Event</a>
       <a href="{{ url_for('auth.logout') }}" class="logout-btn">Logout</a>
-      <!-- <img src="{{ url_for('static', filename='images/user_logo.png') }}" alt="User Logo"> -->
     </div>
   </header>
 
@@ -157,7 +182,13 @@
     {% if events %}
       {% for event in events %}
         <div class="event-card">
-          <div class="event-title">{{ event.title }}</div>
+          <div class="event-title">
+            {{ event.title }}
+            <span class="visibility-tag {% if event.visibility == 'private' %}private{% else %}public{% endif %}">
+              {{ event.visibility.value|capitalize }}
+            </span>
+          </div>
+
           <div class="event-meta">
             Hosted by <strong>{{ event.creator.username }}</strong> | 
             Date: {{ event.date.strftime('%d %b %Y') }} | 
@@ -167,31 +198,26 @@
           {% if event.creator.id == current_user.id %}
             <div class="created-by-you">Created by you</div>
 
-            <!-- Delete Event Button -->
             <form action="{{ url_for('events.delete_event', event_id=event.id) }}" method="POST" style="display:inline;">
               <button type="submit" class="delete-btn">Delete</button>
             </form>
 
-            <!-- Update Event Button -->
             <a href="{{ url_for('events.update_event', event_id=event.id) }}" class="update-btn">Update</a>
 
           {% else %}
-          {% if current_user in event.attendees %}
-           <form action="{{ url_for('attendees.unregister_attendee', event_id=event.id) }}" method="POST" style="display:inline;">
-    <button type="submit" class="delete-btn">Unregister</button>
-  </form>
-          {% else %}
-
-            <!-- Register Button (Only for other users) -->
-            <form action="{{ url_for('attendees.create_attendee') }}" method="POST" style="display:inline;">
-              <input type="hidden" name="eventId" value="{{ event.id }}">
-              <button type="submit" class="register-btn">Register</button>
-            </form>
+            {% if current_user in event.attendees %}
+              <form action="{{ url_for('attendees.unregister_attendee', event_id=event.id) }}" method="POST" style="display:inline;">
+                <button type="submit" class="delete-btn">Unregister</button>
+              </form>
+            {% else %}
+              <form action="{{ url_for('attendees.create_attendee') }}" method="POST" style="display:inline;">
+                <input type="hidden" name="eventId" value="{{ event.id }}">
+                <button type="submit" class="register-btn">Register</button>
+              </form>
             {% endif %}
           {% endif %}
 
-          <!-- View Attendees Button -->
-          <a href="{{ url_for('attendees.get_attendee', attendee_id=current_user.id, event_id = event.id) }}" class="attendees-btn">
+          <a href="{{ url_for('attendees.get_attendee', attendee_id=current_user.id, event_id=event.id) }}" class="attendees-btn">
             View Attendees
           </a>
         </div>
