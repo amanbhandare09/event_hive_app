@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register for Event | EventHive</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(120deg, #0a0a0a, #003300);
+      color: #f0f0f0;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .register-box {
+      background-color: #1a1a1a;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+      max-width: 400px;
+      text-align: center;
+    }
+
+    h2 {
+      color: #4CAF50;
+      margin-bottom: 20px;
+    }
+
+    p {
+      color: #ccc;
+      margin-bottom: 25px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .yes-btn {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .no-btn {
+      background-color: #b32d2e;
+      color: white;
+    }
+
+    .yes-btn:hover {
+      background-color: #45a049;
+    }
+
+    .no-btn:hover {
+      background-color: #a02627;
+    }
+  </style>
+</head>
+<body>
+  <div class="register-box">
+    <!-- <h2>Register for {{ event.title }}</h2> -->
+    <p>Would you like to register for this event?</p>
+
+    <a href="{{ url_for('main.confirm_registration', event_id=event_id, decision='yes') }}" class="btn yes-btn">Yes, Register</a>
+    <a href="{{ url_for('main.confirm_registration', event_id=event_id, decision='no') }}" class="btn no-btn">No, Maybe Later</a>
+  </div>
+</body>
+</html>
