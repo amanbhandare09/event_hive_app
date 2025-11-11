@@ -45,6 +45,7 @@ Delivered a robust backend system capable of managing events, handling RSVP work
   - Location  
   - Date / Time Range  
   - Created By
+  - Tags
 
 - **QR Code Generation**  
   Generate QR codes for:
