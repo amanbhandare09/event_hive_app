@@ -30,23 +30,23 @@ Delivered a robust backend system capable of managing events, handling RSVP work
 ## **Event Management System — Detailed Feature List**
 
 ### **1. Core System Architecture**
-- **CLI Support** *(Assigned to Sanket)*  
+- **CLI Support**   
   Full system functionality is accessible through the command line.
   
-- **Data Validation using Pydantic** *(Assigned to Aman)*  
+- **Data Validation using Pydantic**   
   Ensures input correctness and enforces strict data integrity.
 
-- **Tag-Based Classification** *(Assigned to Gauravi)*  
+- **Tag-Based Classification**   
   Allows filtering and categorization of events using descriptive tags.
 
-- **Advanced Search Functionality** *(Assigned to Kapil)*  
+- **Advanced Search Functionality**   
   Users can search events by:
   - Event Name  
   - Location  
   - Date / Time Range  
   - Created By
 
-- **QR Code Generation** *(Assigned to Sanket)*  
+- **QR Code Generation**  
   Generate QR codes for:
   - Event Check-In  
   - Access Verification  
@@ -61,11 +61,11 @@ Delivered a robust backend system capable of managing events, handling RSVP work
 - **Private Events:** Require join request and approval.
   - Approval notifications are emailed to the event creator.
 
-#### **Reminders (Optional)**
+#### **Reminders**
 - A checkbox enables reminder scheduling.
 - Sends automated email reminders to all event participants.
 
-#### **Event Duration & Scheduling** *(Assigned to Gauravi)*
+#### **Event Duration & Scheduling** 
 - Supports multi-day events with clear:
   - **Start Time**
   - **End Time**
