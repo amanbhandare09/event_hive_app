@@ -3,7 +3,7 @@ from datetime import datetime
 
 from flask_login import current_user, login_required
 from app import db
-from models.model import Event, EventMode, User,event_attendees
+from models.model import Event, EventMode, User,event_attendees,EventVisibility
 
 # Main Blueprint
 main_blueprint = Blueprint("main", __name__)
@@ -72,6 +72,7 @@ def create_event():
         date=datetime.fromisoformat(data["date"]).date(),
         time=datetime.strptime(data["time"], "%H:%M").time() if data.get("time") else None,
         mode=EventMode(data["mode"].lower()),
+        visibility=EventVisibility(data["visibility"].lower()),
         venue=data.get("venue"),
         capacity=int(data.get("capacity", 100)),
         organizer_id=current_user.id

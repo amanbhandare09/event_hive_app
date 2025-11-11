@@ -86,7 +86,6 @@
       margin-top: 15px;
       font-size: 14px;
     }
-
   </style>
 </head>
 <body>
@@ -122,6 +121,13 @@
       <label for="capacity">Capacity</label>
       <input type="number" id="capacity" name="capacity" min="1" value="100">
 
+      <!-- 🔥 New Field for Public/Private -->
+      <label for="visibility">Visibility</label>
+      <select id="visibility" name="visibility" required>
+        <option value="public">Public</option>
+        <option value="private">Private</option>
+      </select>
+
       <button type="submit">Create Event</button>
     </form>
 
@@ -140,6 +146,7 @@
         mode: document.getElementById('mode').value,
         venue: document.getElementById('venue').value,
         capacity: document.getElementById('capacity').value,
+        visibility: document.getElementById('visibility').value,  // 👈 Added
         organizer_id: {{ current_user.id }}
       };
 
@@ -156,11 +163,11 @@
 
       if (response.ok) {
         messageEl.style.color = "#4CAF50";
-        messageEl.textContent = " Event created successfully!";
+        messageEl.textContent = "Event created successfully!";
         document.getElementById('createEventForm').reset();
       } else {
         messageEl.style.color = "red";
-        messageEl.textContent = " Failed to create event: " + (result.message || "Error");
+        messageEl.textContent = "Failed to create event: " + (result.message || "Error");
       }
     });
   </script>
