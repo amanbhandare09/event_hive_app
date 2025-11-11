@@ -11,9 +11,16 @@ event_attendees = db.Table(
     db.Column("event_id", db.Integer, db.ForeignKey("events.id"), primary_key=True)
 )
 
+# Enum for event mode (existing)
 class EventMode(enum.Enum):
     online = "online"
     offline = "offline"
+
+# ✅ New enum for visibility
+class EventVisibility(enum.Enum):
+    public = "public"
+    private = "private"
+
 
 class Event(db.Model):
     __tablename__ = "events"
@@ -27,17 +34,21 @@ class Event(db.Model):
     venue = db.Column(db.String(150))
     capacity = db.Column(db.Integer, default=100)
 
+    # ✅ New column for public/private events
+    visibility = db.Column(db.Enum(EventVisibility), default=EventVisibility.public, nullable=False)
+
     # Link to creator (User)
     organizer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     creator = db.relationship("User", backref=db.backref("created_events", lazy=True))
 
+    # Many-to-many relationship with users
     attendees = db.relationship(
         "User", secondary=event_attendees, back_populates="attending_events"
     )
 
     def __repr__(self):
-        return f"<Event {self.title}>"
-    
+        return f"<Event {self.title}, Visibility={self.visibility.value}>"
+
 
 class User(db.Model, UserMixin):
     __tablename__ = "users"
