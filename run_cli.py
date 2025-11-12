@@ -4,31 +4,27 @@ from datetime import datetime, timedelta
 from app import db,create_app
 from werkzeug.security import generate_password_hash,check_password_hash
 
-app=create_app()
 
-
+app = create_app()
 
 def init_db(args):
-    """Initialize or reset the database."""
-   
     with app.app_context():
         if args.drop:
-            print(" Dropping all tables...")
+            print("Dropping all tables...")
             db.drop_all()
 
         print("Creating tables...")
         db.create_all()
-        print("Database tables created successfully!")
-   
+        print("Database Ready!")
 
 
 def send_reminders(args):
-    """Send reminders for events within the next 24 hours."""
     with app.app_context():
         from models.model import Event
 
         now = datetime.utcnow()
         next_day = now + timedelta(hours=24)
+
         events = Event.query.filter(Event.date.between(now.date(), next_day.date())).all()
 
         if not events:
@@ -37,33 +33,29 @@ def send_reminders(args):
 
         for e in events:
             event_time = e.time.strftime("%H:%M:%S") if e.time else "N/A"
-            print(f"Reminder sent for '{e.title}' scheduled on {e.date} at {event_time}")
+            print(f" Reminder: '{e.title}' on {e.date} at {event_time}")
 
-        print("All reminders simulated successfully!")
+        print("Reminders sent.")
 
 
 def add_event(args):
-    """Add an event manually via argparse."""
     with app.app_context():
         from models.model import Event, EventMode
 
         try:
-            # Split datetime into date and time parts
             dt = datetime.strptime(args.datetime, "%Y-%m-%d %H:%M:%S")
             event_date = dt.date()
             event_time = dt.time()
         except ValueError:
             print("Invalid datetime format. Use YYYY-MM-DD HH:MM:SS")
             return
-
-        # Validate mode
+        
         try:
             mode = EventMode[args.mode.lower()]
         except KeyError:
-            print("Invalid mode. Use 'online' or 'offline'.")
+            print("Invalid mode. Use online/offline.")
             return
 
-        # Create and add event
         e = Event(
             title=args.title,
             description=args.description or "",
@@ -77,74 +69,95 @@ def add_event(args):
 
         db.session.add(e)
         db.session.commit()
-        print(f"Event '{args.title}' added for {event_date} at {event_time}.")
+        print(f"Event '{args.title}' created successfully!")
 
 
 def create_user(args):
-    """Create a new user account."""
     with app.app_context():
         from models.model import User
 
-        existing_user = User.query.filter(
-            (User.username == args.username) | (User.email == args.email)
-        ).first()
-
-        if existing_user:
-            print("User with this username or email already exists.")
+        if User.query.filter((User.username == args.username) | (User.email == args.email)).first():
+            print("User already exists.")
             return
 
         hashed_password = generate_password_hash(args.password)
+        new_user = User(username=args.username, email=args.email, password=hashed_password)
 
-        users = User(
-            username=args.username,
-            email=args.email,
-            password=hashed_password
-        
-        )
-
-        db.session.add(users)
+        db.session.add(new_user)
         db.session.commit()
-        print(f"✅ User '{args.username}' created successfully!")
+        print(f"User '{args.username}' created!")
 
+
+def delete_event(args):
+    with app.app_context():
+        from models.model import Event
+        
+        event = Event.query.get(args.id)
+        if not event:
+            print(" Event not found.")
+            return
+        
+        db.session.delete(event)
+        db.session.commit()
+        print(f"Event ID {args.id} deleted.")
+
+
+def delete_user(args):
+    with app.app_context():
+        from models.model import User
+        
+        user = User.query.get(args.id)
+        if not user:
+            print("User not found.")
+            return
+        
+        db.session.delete(user)
+        db.session.commit()
+        print(f"User ID {args.id} deleted.")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Manage your Flask Event App")
-    subparsers = parser.add_subparsers(help="Available commands")
+    parser = argparse.ArgumentParser(description="Event Hive CLI")
+    subparsers = parser.add_subparsers()
 
     # init-db
-    parser_init = subparsers.add_parser("init-db", help="Initialize the database")
-    parser_init.add_argument("--drop", action="store_true", help="Drop existing tables before creating new ones")
+    parser_init = subparsers.add_parser("init-db", help="Initialize database")
+    parser_init.add_argument("--drop", action="store_true", help="Drop tables first")
     parser_init.set_defaults(func=init_db)
 
     # send-reminders
-    parser_reminders = subparsers.add_parser("send-reminders", help="Send event reminders within 24 hours")
-    parser_reminders.set_defaults(func=send_reminders)
+    parser_rem = subparsers.add_parser("send-reminders", help="Send reminders")
+    parser_rem.set_defaults(func=send_reminders)
 
     # add-event
-    parser_add = subparsers.add_parser("add-event", help="Add a new event manually")
-    parser_add.add_argument("title", type=str, help="Title of the event")
-    parser_add.add_argument("datetime", type=str, help="Event date and time (format: YYYY-MM-DD HH:MM:SS)")
-    parser_add.add_argument("capacity", type=int, help="Event capacity")
-    parser_add.add_argument("organizer_id", type=int, help="Organizer user ID")
-    parser_add.add_argument("--mode", type=str, default="online", help="Event mode: online or offline")
-    parser_add.add_argument("--venue", type=str, help="Venue for offline events")
-    parser_add.add_argument("--description", type=str, help="Optional event description")
+    parser_add = subparsers.add_parser("add-event", help="Add event")
+    parser_add.add_argument("title")
+    parser_add.add_argument("datetime")
+    parser_add.add_argument("capacity", type=int)
+    parser_add.add_argument("organizer_id", type=int)
+    parser_add.add_argument("--mode", default="online")
+    parser_add.add_argument("--venue")
+    parser_add.add_argument("--description")
     parser_add.set_defaults(func=add_event)
 
-
-    parser_user = subparsers.add_parser("create-user", help="Create a new user")
-    parser_user.add_argument("username", type=str)
-    parser_user.add_argument("email", type=str)
-    parser_user.add_argument("password", type=str)
-    # parser_user.add_argument("--phone", type=str, default=None, help="Phone number")
-    # parser_user.add_argument("--address", type=str, default=None, help="Address")
+    # create-user
+    parser_user = subparsers.add_parser("create-user", help="Create user")
+    parser_user.add_argument("username")
+    parser_user.add_argument("email")
+    parser_user.add_argument("password")
     parser_user.set_defaults(func=create_user)
 
+    # delete-event
+    parser_del_event = subparsers.add_parser("delete-event", help="Delete event")
+    parser_del_event.add_argument("id", type=int)
+    parser_del_event.set_defaults(func=delete_event)
+
+    # delete-user
+    parser_del_user = subparsers.add_parser("delete-user", help="Delete user")
+    parser_del_user.add_argument("id", type=int)
+    parser_del_user.set_defaults(func=delete_user)
 
     args = parser.parse_args()
-
-    # Handle no command case
     if hasattr(args, "func"):
         args.func(args)
     else:
