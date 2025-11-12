@@ -1,9 +1,11 @@
 from flask import Blueprint, flash, jsonify, redirect, request, render_template, url_for
 from datetime import datetime
-
 from flask_login import current_user, login_required
 from app import db
 from models.model import Event, EventMode, User,event_attendees,EventVisibility
+from models.model_validate import EventCreateSchema
+from pydantic import ValidationError
+
 
 # Main Blueprint
 main_blueprint = Blueprint("main", __name__)
@@ -35,58 +37,80 @@ def list_events():
     events = Event.query.all()
 
     print(events)
-
-    # data = [
-    #     {
-    #         "title": event.title,
-    #         "description": event.description,
-    #         "date": event.date.strftime("%Y-%m-%d"),
-    #         "time": event.time.strftime("%H:%M") if event.time else None,
-    #         "mode": event.mode.value,
-    #         "venue": event.venue,
-    #         "capacity": event.capacity
-    #     }
-    #     for event in events
-    # ]
-
     return render_template('profile.html', events=events), 200
+
+# 🟢 Show Create Event Page
+from flask import Blueprint, request, jsonify, render_template
+from flask_login import current_user
+from models.model import Event, EventMode, EventVisibility, db
+from models.model_validate import EventCreateSchema
+from pydantic import ValidationError
+from datetime import datetime
+
+events_blueprint = Blueprint("events", __name__)
 
 # 🟢 Show Create Event Page
 @events_blueprint.route("/create", methods=["GET"])
 def create_event_page():
     return render_template("create.html")
 
+
 # 🟢 Handle Create Event POST (from fetch() or form)
 @events_blueprint.route("/create", methods=["POST"])
 def create_event():
-    # If request has JSON (from fetch)
+    # Determine if it's JSON or form submission
     if request.is_json:
         data = request.get_json()
     else:
-        # Fallback for normal HTML form submission
-        data = request.form
+        data = request.form.to_dict()
 
+    # ✅ Add the organizer_id (from logged-in user)
+    data["organizer_id"] = current_user.id
+
+    try:
+        # ✅ Validate with Pydantic
+        validated = EventCreateSchema(**data)
+
+    except ValidationError as e:
+        # 🔴 Validation failed
+        # Return JSON response if it was an API request
+        if request.is_json:
+            return jsonify({
+                "status": "error",
+                "message": "Invalid input data",
+                "errors": e.errors()
+            }), 400
+
+        # 🔴 Or show validation errors in HTML template
+        else:
+            return render_template("create.html", errors=e.errors()), 400
+
+    # ✅ If validation passed — proceed to create event
     event = Event(
-        title=data.get("title"),
-        description=data.get("description"),
-        date=datetime.fromisoformat(data["date"]).date(),
-        time=datetime.strptime(data["time"], "%H:%M").time() if data.get("time") else None,
-        mode=EventMode(data["mode"].lower()),
-        visibility=EventVisibility(data["visibility"].lower()),
-        venue=data.get("venue"),
-        capacity=int(data.get("capacity", 100)),
-        organizer_id=current_user.id
+        title=validated.title,
+        description=validated.description,
+        date=validated.date,
+        time=validated.time,
+        mode=EventMode(validated.mode.value),
+        visibility=EventVisibility(validated.visibility.value),
+        venue=validated.venue,
+        capacity=validated.capacity,
+        organizer_id=validated.organizer_id
     )
 
     db.session.add(event)
     db.session.commit()
 
-    # If JSON (API) → return JSON
+    # ✅ If API → return JSON
     if request.is_json:
-        return jsonify({"message": "Event created successfully", "event_id": event.id}), 201
-    # Else redirect back to events list page
-    else:
-        return render_template("create.html", success=True)
+        return jsonify({
+            "status": "success",
+            "message": "Event created successfully",
+            "event_id": event.id
+        }), 201
+
+    # ✅ If normal form → reload page with success flag
+    return render_template("create.html", success=True)
 
 
 @events_blueprint.route("/<int:event_id>", methods=["GET"])
