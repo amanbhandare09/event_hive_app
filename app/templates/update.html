@@ -107,8 +107,11 @@
       <label for="date">Date</label>
       <input type="date" id="date" name="date" value="{{ event.date }}" required>
 
-      <label for="time">Time</label>
-      <input type="time" id="time" name="time" value="{{ event.time.strftime('%H:%M') if event.time else '' }}">
+       <label for="start_time">Start Time</label>
+      <input type="time" id="starttime" name="starttime" value="{{ event.starttime.strftime('%H:%M') if event.starttime else '' }}" required>
+
+      <label for="end_time">End Time</label>
+      <input type="time" id="endtime" name="endtime" value="{{ event.endtime.strftime('%H:%M') if event.endtime else '' }}" required>
 
       <label for="mode">Mode</label>
       <select id="mode" name="mode" required>
@@ -122,6 +125,18 @@
       <label for="capacity">Capacity</label>
       <input type="number" id="capacity" name="capacity" min="1" value="{{ event.capacity }}">
 
+      <label for="tags">Tags</label>
+<select id="tags" name="tags" required>
+  <option value="Music" {% if event.tags.value == 'Music' %}selected{% endif %}>Music</option>
+  <option value="Sports" {% if event.tags.value == 'Sports' %}selected{% endif %}>Sports</option>
+  <option value="Tech" {% if event.tags.value == 'Tech' %}selected{% endif %}>Tech</option>
+  <option value="Networking" {% if event.tags.value == 'Networking' %}selected{% endif %}>Networking</option>
+  <option value="Art" {% if event.tags.value == 'Art' %}selected{% endif %}>Art</option>
+  <option value="Education" {% if event.tags.value == 'Education' %}selected{% endif %}>Education</option>
+</select>
+
+    
+     
       <button type="submit">Update Event</button>
     </form>
 
@@ -134,12 +149,14 @@
 
       const data = {
         title: document.getElementById('title').value,
-        description: document.getElementById('description').value,
-        date: document.getElementById('date').value,
-        time: document.getElementById('time').value,
-        mode: document.getElementById('mode').value,
-        venue: document.getElementById('venue').value,
-        capacity: document.getElementById('capacity').value
+    description: document.getElementById('description').value,
+    date: document.getElementById('date').value,
+    starttime: document.getElementById('starttime').value,
+    endtime: document.getElementById('endtime').value,
+    mode: document.getElementById('mode').value,
+    venue: document.getElementById('venue').value,
+    capacity: document.getElementById('capacity').value,
+    tags: document.getElementById('tags').value
       };
 
       const response = await fetch("{{ url_for('events.update_event', event_id=event.id) }}", {

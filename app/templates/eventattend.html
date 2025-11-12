@@ -68,15 +68,38 @@
     a.back-btn:hover {
       background-color: #45a049;
     }
+
+    .tag-badge {
+  background-color: #2e7d32;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
   </style>
 </head>
 <body>
   <h1>{{ event.title }}</h1>
   <div class="event-info">
-    <p><strong>Date:</strong> {{ event.date.strftime('%d %b %Y') }}</p>
-    <p><strong>Mode:</strong> {{ event.mode.value|capitalize }}</p>
-    <p><strong>Venue:</strong> {{ event.venue }}</p>
-  </div>
+  <p><strong>Date:</strong> {{ event.date.strftime('%d %b %Y') }}</p>
+  <p>
+    <strong>Time:</strong> 
+    {{ event.starttime.strftime('%I:%M %p') }} - {{ event.endtime.strftime('%I:%M %p') }}
+  </p>
+  <p><strong>Mode:</strong> {{ event.mode.value|capitalize }}</p>
+  <p><strong>Venue:</strong> {{ event.venue }}</p>
+  <p>
+    <strong>Tag:</strong>
+    <span>{{ event.tags.value }}</span>
+  </p>
+  <p>
+    <strong>Type:</strong>
+    <span class="tag-badge">{{ event.visibility.value }}</span>
+  </p>
+</div>
 
   <h3>Attendees:</h3>
   {% if attendees %}

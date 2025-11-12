@@ -190,10 +190,14 @@
           </div>
 
           <div class="event-meta">
-            Hosted by <strong>{{ event.creator.username }}</strong> | 
-            Date: {{ event.date.strftime('%d %b %Y') }} | 
-            Location: {{ event.venue }}
-          </div>
+  Description: {{ event.description }}</br>
+  Hosted by <strong>{{ event.creator.username }}</strong> |
+  Date: {{ event.date.strftime('%d %b %Y') }} |
+  Time: {{ event.starttime.strftime('%I:%M %p') }} - {{ event.endtime.strftime('%I:%M %p') }} |
+  Location: {{ event.venue }} |
+  Tag: {{ event.tags.value }}
+</div>
+
 
           {% if event.creator.id == current_user.id %}
             <div class="created-by-you">Created by you</div>
