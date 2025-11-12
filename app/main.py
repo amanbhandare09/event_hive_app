@@ -3,7 +3,7 @@ from datetime import datetime
 
 from flask_login import current_user, login_required
 from app import db
-from models.model import Event, EventMode, User,event_attendees,EventVisibility
+from models.model import Event, EventMode, User,event_attendees,EventVisibility, Eventtag
 
 # Main Blueprint
 main_blueprint = Blueprint("main", __name__)
@@ -70,12 +70,14 @@ def create_event():
         title=data.get("title"),
         description=data.get("description"),
         date=datetime.fromisoformat(data["date"]).date(),
-        time=datetime.strptime(data["time"], "%H:%M").time() if data.get("time") else None,
+        starttime=datetime.strptime(data["starttime"], "%H:%M").time() if data.get("starttime") else None,
         mode=EventMode(data["mode"].lower()),
+        endtime=datetime.strptime(data["endtime"], "%H:%M").time() if data.get("endtime") else None,
         visibility=EventVisibility(data["visibility"].lower()),
         venue=data.get("venue"),
         capacity=int(data.get("capacity", 100)),
-        organizer_id=current_user.id
+        organizer_id=current_user.id,
+        tags=Eventtag(data["tags"])
     )
 
     db.session.add(event)
@@ -102,10 +104,12 @@ def get_event(event_id):
         "title": event.title,
         "description": event.description,
         "date": event.date.strftime("%Y-%m-%d"),
-        "time": event.time.strftime("%H:%M") if event.time else None,
+        "starttime": event.starttime.strftime("%H:%M") if event.starttime else None,
+        "endtime": event.endtime.strftime("%H:%M") if event.endtime else None,
         "mode": event.mode.value,
         "venue": event.venue,
-        "capacity": event.capacity
+        "capacity": event.capacity,
+        "tags": event.tags
     }
 
     return jsonify(data), 200
@@ -131,10 +135,12 @@ def update_event(event_id):
         event.title = data.get("title")
         event.description = data.get("description")
         event.date = datetime.strptime(data.get("date"), "%Y-%m-%d").date()
-        event.time = datetime.strptime(data.get("time"), "%H:%M").time() if data.get("time") else None
+        event.starttime = datetime.strptime(data.get("starttime"), "%H:%M").time() if data.get("starttime") else None
+        event.endtime = datetime.strptime(data.get("endtime"), "%H:%M").time() if data.get("endtime") else None
         event.mode = EventMode(data.get("mode"))
         event.venue = data.get("venue")
         event.capacity = int(data.get("capacity"))
+        event.tags = Eventtag(data.get("tags"))
         
         db.session.commit()
         
@@ -156,15 +162,15 @@ def delete_event(event_id):
     """Delete a specific event if the current user is the creator."""
     event = Event.query.get_or_404(event_id)
 
-    # ✅ Ensure only the event creator can delete
+    # Ensure only the event creator can delete
     if event.organizer_id != current_user.id:
         return jsonify({"error": "Unauthorized: You can only delete your own events."}), 403
 
-    # ✅ Delete the event
+    # Delete the event
     db.session.delete(event)
     db.session.commit()
 
-    # ✅ Return response (supports API + HTML redirect)
+    # Return response (supports API + HTML redirect)
     if "application/json" in str(request.headers.get("Accept")):
         return jsonify({"message": f"Event {event_id} deleted successfully"}), 200
     else:
@@ -236,19 +242,19 @@ def create_attendee():
     if not event:
         return "event not found", 404
 
-    # ✅ Prevent duplicate registration
+    # Prevent duplicate registration
     if current_user in event.attendees:
         return jsonify({"error": "Already registered for this event"}), 400
 
-    # ✅ Prevent organizer from registering for their own event
+    # Prevent organizer from registering for their own event
     if event.organizer_id == current_user.id:
         return jsonify({"error": "You cannot register for your own event"}), 400
 
-    # ✅ Check if event still has capacity
+    # Check if event still has capacity
     if event.capacity <= 0:
         return jsonify({"error": "Event is full"}), 400
 
-    # ✅ Add user to event
+    # Add user to event
     event.attendees.append(current_user)
     event.capacity -= 1
 

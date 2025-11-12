@@ -21,6 +21,37 @@ class EventVisibility(enum.Enum):
     public = "public"
     private = "private"
 
+class Eventtag(enum.Enum):
+    WORKSHOP = "Workshop"
+    SEMINAR = "Seminar"
+    MEETING = "Meeting"
+    CONFERENCE = "Conference"
+    PARTY = "Party"
+    CELEBRATION = "Celebration"
+    NETWORKING = "Networking"
+    FUNDRAISER = "Fundraiser"
+    COMPETITION = "Competition"
+    PERFORMANCE = "Performance"
+    FESTIVAL = "Festival"
+    WEBINAR = "Webinar"
+    TRAINING = "Training"
+    SPORTS = "Sports"
+    TRIP = "Trip"
+    VOLUNTEERING = "Volunteering"
+    HACKATHON = "Hackathon"
+    LAUNCH = "Launch"
+    CULTURAL = "Cultural"
+    EDUCATIONAL = "Educational"
+    ENTERTAINMENT = "Entertainment"
+    SOCIAL = "Social"
+    PROFESSIONAL = "Professional"
+    TECH = "Tech"
+    ART = "Art"
+    MUSIC = "Music"
+    FOOD = "Food"
+    HEALTH = "Health"
+    ENVIRONMENT = "Environment"
+
 
 class Event(db.Model):
     __tablename__ = "events"
@@ -29,10 +60,12 @@ class Event(db.Model):
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     date = db.Column(db.Date, nullable=False)
-    time = db.Column(db.Time)
+    starttime = db.Column(db.Time)
+    endtime = db.Column(db.Time)
     mode = db.Column(db.Enum(EventMode), default=EventMode.online, nullable=False)
     venue = db.Column(db.String(150))
     capacity = db.Column(db.Integer, default=100)
+    tags = db.Column(db.Enum(Eventtag), default=Eventtag.CELEBRATION, nullable=False)
 
     # ✅ New column for public/private events
     visibility = db.Column(db.Enum(EventVisibility), default=EventVisibility.public, nullable=False)

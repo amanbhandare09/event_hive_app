@@ -97,6 +97,7 @@
   <div class="form-container">
     <h2>Create a New Event</h2>
     <form id="createEventForm">
+
       <label for="title">Event Title</label>
       <input type="text" id="title" name="title" required>
 
@@ -106,8 +107,12 @@
       <label for="date">Date</label>
       <input type="date" id="date" name="date" required>
 
-      <label for="time">Time</label>
-      <input type="time" id="time" name="time">
+      <label for="starttime">Start Time</label>
+      <input type="time" id="starttime" name="starttime" required>
+
+      <label for="endtime">End Time</label>
+      <input type="time" id="endtime" name="endtime" required>
+  
 
       <label for="mode">Mode</label>
       <select id="mode" name="mode" required>
@@ -121,7 +126,17 @@
       <label for="capacity">Capacity</label>
       <input type="number" id="capacity" name="capacity" min="1" value="100">
 
-      <!-- 🔥 New Field for Public/Private -->
+      
+      <label for="tags">Tags</label>
+      <select id="tags" name="tags" required>
+        <option value="Music">Music</option>
+        <option value="Sports">Sports</option>
+        <option value="Tech">Tech</option>
+        <option value="Art">Art</option>
+        <option value="Education">Education</option>
+        <option value="Networking">Networking</option>
+      </select>
+    
       <label for="visibility">Visibility</label>
       <select id="visibility" name="visibility" required>
         <option value="public">Public</option>
@@ -142,19 +157,19 @@
         title: document.getElementById('title').value,
         description: document.getElementById('description').value,
         date: document.getElementById('date').value,
-        time: document.getElementById('time').value,
+        starttime: document.getElementById('starttime').value,  // 🔥 Added
+        endtime: document.getElementById('endtime').value,      // 🔥 Added
         mode: document.getElementById('mode').value,
         venue: document.getElementById('venue').value,
         capacity: document.getElementById('capacity').value,
-        visibility: document.getElementById('visibility').value,  // 👈 Added
+        tags: document.getElementById('tags').value,            // 🔥 Added
+        visibility: document.getElementById('visibility').value,
         organizer_id: {{ current_user.id }}
       };
 
       const response = await fetch("{{ url_for('events.create_event') }}", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
       });
 
