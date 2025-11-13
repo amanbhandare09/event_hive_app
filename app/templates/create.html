@@ -91,7 +91,7 @@
 <body>
   <header>
     <div class="logo">EventHive</div>
-    <a href="{{ url_for('main.profile') }}" style="color:#4CAF50; text-decoration:none; font-weight:500;">Back to Events</a>
+    <!-- <a href="{{ url_for('main.profile') }}" style="color:#4CAF50; text-decoration:none; font-weight:500;">Back to Events</a> -->
   </header>
 
   <div class="form-container">
@@ -177,6 +177,7 @@
       const messageEl = document.getElementById('message');
 
       if (response.ok) {
+        window.location.href= "{{url_for('main.profile')}}",
         messageEl.style.color = "#4CAF50";
         messageEl.textContent = "Event created successfully!";
         document.getElementById('createEventForm').reset();
