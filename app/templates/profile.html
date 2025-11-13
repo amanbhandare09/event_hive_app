@@ -171,6 +171,7 @@
     <div class="logo">EventHive</div>
     <div class="user-info">
       <span>{{ current_user.username }}</span>
+      <a href="{{ url_for('events.live_events') }}" class="create-event-btn">🔴 Live</a>
       <a href="{{ url_for('events.create_event') }}" class="create-event-btn">+ Create Event</a>
       <a href="{{ url_for('auth.logout') }}" class="logout-btn">Logout</a>
     </div>

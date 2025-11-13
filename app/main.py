@@ -301,3 +301,19 @@ def unregister_attendee(event_id):
 # def attendee_events(attendee_id):
 #     """List events the attendee is registered for."""
 #     return jsonify({"message": f"Events for attendee {attendee_id}"}), 200
+
+@events_blueprint.route('/live')
+@login_required
+def live_events():
+    now = datetime.now()
+    today = now.date()
+    current_time = now.time()
+
+    # Fetch events that are currently live
+    live_events = Event.query.filter(
+        Event.date == today,
+        Event.starttime <= current_time,
+        Event.endtime >= current_time
+    ).all()
+
+    return render_template('live.html', events=live_events, now=now)
