@@ -4,19 +4,29 @@ import enum
 from app import db
 from flask_login import UserMixin
 
-# Association table for many-to-many relationship
-event_attendees = db.Table(
-    "event_attendees",
-    db.Column("user_id", db.Integer, db.ForeignKey("users.id"), primary_key=True),
-    db.Column("event_id", db.Integer, db.ForeignKey("events.id"), primary_key=True)
-)
+# Association table for many-to-many relationshin
 
-# Enum for event mode (existing)
+
+# Many-to-many: User attends Event
+class Attendee(db.Model):
+    __tablename__ = "attendees"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey("events.id"), nullable=False)
+
+    token = db.Column(db.String(255), unique=True, nullable=False)  # Unique token for QR code
+    qr_code_path = db.Column(db.String(255))   # Optional: path to QR in static folder
+    has_attended = db.Column(db.Boolean, default=False)
+
+    user = db.relationship("User", back_populates="attendee_links")
+    event = db.relationship("Event", back_populates="attendee_links")
+
+
 class EventMode(enum.Enum):
     online = "online"
     offline = "offline"
 
-# ✅ New enum for visibility
+
 class EventVisibility(enum.Enum):
     public = "public"
     private = "private"
@@ -27,27 +37,21 @@ class Event(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text)
     date = db.Column(db.Date, nullable=False)
-    time = db.Column(db.Time)
-    mode = db.Column(db.Enum(EventMode), default=EventMode.online, nullable=False)
     venue = db.Column(db.String(150))
-    capacity = db.Column(db.Integer, default=100)
 
-    # ✅ New column for public/private events
     visibility = db.Column(db.Enum(EventVisibility), default=EventVisibility.public, nullable=False)
 
-    # Link to creator (User)
     organizer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     creator = db.relationship("User", backref=db.backref("created_events", lazy=True))
+    description = db.Column(db.Text, nullable=True)
+    time = db.Column(db.Time, nullable=False)
+    mode = db.Column(db.Enum(EventMode), default=EventMode.offline, nullable=False)
+    # capacity = db.Column(db.Integer, nullable=True)  # None means unlimited
+    capacity = db.Column(db.Integer, default=0)
 
-    # Many-to-many relationship with users
-    attendees = db.relationship(
-        "User", secondary=event_attendees, back_populates="attending_events"
-    )
-
-    def __repr__(self):
-        return f"<Event {self.title}, Visibility={self.visibility.value}>"
+    attendee_links = db.relationship("Attendee", back_populates="event", cascade="all, delete")
+    attendees = db.relationship('User', secondary='attendees', viewonly=True)
 
 
 class User(db.Model, UserMixin):
@@ -58,10 +62,4 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
 
-    # Many-to-many: user can attend multiple events
-    attending_events = db.relationship(
-        "Event", secondary=event_attendees, back_populates="attendees"
-    )
-
-    def __repr__(self):
-        return f"<User {self.username}>"
+    attendee_links = db.relationship("Attendee", back_populates="user", cascade="all, delete")

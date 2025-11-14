@@ -1,9 +1,12 @@
 from flask import Blueprint, flash, jsonify, redirect, request, render_template, url_for
 from datetime import datetime
+import secrets
+import qrcode
+import os
 
 from flask_login import current_user, login_required
 from app import db
-from models.model import Event, EventMode, User,event_attendees,EventVisibility
+from models.model import Event, EventMode, User, EventVisibility, Attendee
 
 # Main Blueprint
 main_blueprint = Blueprint("main", __name__)
@@ -14,50 +17,40 @@ events_blueprint = Blueprint("events", __name__)
 def index():
     """Render the homepage"""
     return render_template("index.html")
+
+
 @main_blueprint.route("/profile", methods=["GET"])
+@login_required
 def profile():
     """Display user profile"""
-
-    events  = Event.query.all()
-
+    events = Event.query.all()
     return render_template("profile.html", events=events), 200
+
 
 @main_blueprint.route("/api/health", methods=["GET"])
 def api_health():
     """Health check endpoint"""
     return jsonify({"status": "healthy", "message": "API is running"}), 200
 
-# Events Blueprint
-events_blueprint = Blueprint("events", __name__)
 
+# Events Blueprint
 @events_blueprint.route("/", methods=["GET"])
 def list_events():
     events = Event.query.all()
-
     print(events)
-
-    # data = [
-    #     {
-    #         "title": event.title,
-    #         "description": event.description,
-    #         "date": event.date.strftime("%Y-%m-%d"),
-    #         "time": event.time.strftime("%H:%M") if event.time else None,
-    #         "mode": event.mode.value,
-    #         "venue": event.venue,
-    #         "capacity": event.capacity
-    #     }
-    #     for event in events
-    # ]
-
     return render_template('profile.html', events=events), 200
+
 
 # 🟢 Show Create Event Page
 @events_blueprint.route("/create", methods=["GET"])
+@login_required
 def create_event_page():
     return render_template("create.html")
 
+
 # 🟢 Handle Create Event POST (from fetch() or form)
 @events_blueprint.route("/create", methods=["POST"])
+@login_required
 def create_event():
     # If request has JSON (from fetch)
     if request.is_json:
@@ -72,7 +65,7 @@ def create_event():
         date=datetime.fromisoformat(data["date"]).date(),
         time=datetime.strptime(data["time"], "%H:%M").time() if data.get("time") else None,
         mode=EventMode(data["mode"].lower()),
-        visibility=EventVisibility(data["visibility"].lower()),
+        visibility=EventVisibility(data.get("visibility", "public").lower()),
         venue=data.get("venue"),
         capacity=int(data.get("capacity", 100)),
         organizer_id=current_user.id
@@ -93,9 +86,12 @@ def create_event():
 def get_event(event_id):
     """Fetch details for a specific event."""
     event = Event.query.get(event_id)
-    attendees = event.attendee
+    
     if not event:
         return jsonify({"error": "Event not found"}), 404
+
+    # Count actual attendees from attendee_links
+    attendee_count = len(event.attendee_links)
 
     data = {
         "id": event.id,
@@ -104,25 +100,40 @@ def get_event(event_id):
         "date": event.date.strftime("%Y-%m-%d"),
         "time": event.time.strftime("%H:%M") if event.time else None,
         "mode": event.mode.value,
+        "visibility": event.visibility.value,
         "venue": event.venue,
-        "capacity": event.capacity
+        "capacity": event.capacity,
+        "attendee_count": attendee_count,
+        "organizer_id": event.organizer_id
     }
 
     return jsonify(data), 200
+
+
 @events_blueprint.route("/update_event/<int:event_id>", methods=["GET"])
+@login_required
 def load_update_event_page(event_id):
     event = Event.query.get(event_id)
     if not event:
         return "Event Not Found", 404
     
+    # Ensure only organizer can update
+    if event.organizer_id != current_user.id:
+        return "Unauthorized", 403
+    
     return render_template("update.html", event=event)
 
 
 @events_blueprint.route("/update_event/<int:event_id>", methods=["POST"])
+@login_required
 def update_event(event_id):
     event = Event.query.get(event_id)
     if not event:
         return jsonify({"message": "Event not found"}), 404
+    
+    # Ensure only organizer can update
+    if event.organizer_id != current_user.id:
+        return jsonify({"message": "Unauthorized"}), 403
     
     try:
         data = request.get_json()
@@ -133,6 +144,7 @@ def update_event(event_id):
         event.date = datetime.strptime(data.get("date"), "%Y-%m-%d").date()
         event.time = datetime.strptime(data.get("time"), "%H:%M").time() if data.get("time") else None
         event.mode = EventMode(data.get("mode"))
+        event.visibility = EventVisibility(data.get("visibility", event.visibility.value))
         event.venue = data.get("venue")
         event.capacity = int(data.get("capacity"))
         
@@ -145,11 +157,6 @@ def update_event(event_id):
         return jsonify({"message": str(e)}), 400
 
 
-# @events_blueprint.route("/<int:event_id>", methods=["PATCH"])
-# def partial_update_event(event_id):
-#     """Partially update an event (e.g., capacity or title)."""
-#     return jsonify({"message": f"Event {event_id} partially updated"}), 200
-
 @events_blueprint.route("/<int:event_id>", methods=["DELETE", "POST"])
 @login_required
 def delete_event(event_id):
@@ -160,7 +167,7 @@ def delete_event(event_id):
     if event.organizer_id != current_user.id:
         return jsonify({"error": "Unauthorized: You can only delete your own events."}), 403
 
-    # ✅ Delete the event
+    # ✅ Delete the event (cascade will handle attendee_links)
     db.session.delete(event)
     db.session.commit()
 
@@ -170,128 +177,147 @@ def delete_event(event_id):
     else:
         return redirect(url_for("main.profile"))
 
-# @events_blueprint.route("/event_update/<int:event_id>", methods=["GET"])
-# @login_required
-# def load_update_event_page(event_id):
-#     event = Event.query.get_or_404(event_id)
-
-#     if event.organizer_id != current_user.id:
-#         return "Unauthorized", 403
-
-#     return render_template("update.html", event=event)
-
-
-# @events_blueprint.route("/event_update/<int:event_id>", methods=["PUT"])
-# @login_required
-# def update_event(event_id):
-#     event = Event.query.get_or_404(event_id)
-
-#     if event.organizer_id != current_user.id:
-#         return "Unauthorized", 403
-
-#     event.title = request.form.get("title")
-#     event.description = request.form.get("description")
-#     event.date = request.form.get("date")
-#     event.time = request.form.get("time")
-#     event.mode = request.form.get("mode")
-#     event.venue = request.form.get("venue")
-#     event.capacity = request.form.get("capacity")
-
-#     db.session.commit()
-
-#     return redirect(url_for("events.load_update_event_page", event_id=event_id))
-
-
-
-
-# @events_blueprint.route("/upcoming", methods=["GET"])
-# def upcoming_events():
-#     """List upcoming events (next 7 days, by default)."""
-#     return jsonify({"message": "Upcoming events list"}), 200
-
-# @events_blueprint.route("/<int:event_id>/attendees", methods=["GET"])
-# def event_attendees(event_id):
-#     """List all attendees registered for a given event."""
-#     return jsonify({"message": f"Attendees for event {event_id}"}), 200
-
 
 # Attendees Blueprint
 attendees_blueprint = Blueprint("attendees", __name__)
 
-# @attendees_blueprint.route("/list_attendees", methods=["GET"])
-# def list_attendees():
-#     """Retrieve a list of all attendees."""
-#     return jsonify({"message": "List of all attendees"}), 200
 
-@attendees_blueprint.route("/register", methods=["POST"])
+# from flask import render_template, redirect, url_for, request, flash
+# import secrets
+
+
+@attendees_blueprint.route('/register', methods=['POST'])
 @login_required
 def create_attendee():
-    eventId = request.form.get("eventId")
-    print("FORM DATA:", request.form)
-
-    if not eventId:
-        return "eventId missing", 400
-
-    event = Event.query.get(eventId)
-    if not event:
-        return "event not found", 404
-
-    # ✅ Prevent duplicate registration
-    if current_user in event.attendees:
-        return jsonify({"error": "Already registered for this event"}), 400
-
-    # ✅ Prevent organizer from registering for their own event
-    if event.organizer_id == current_user.id:
-        return jsonify({"error": "You cannot register for your own event"}), 400
-
-    # ✅ Check if event still has capacity
-    if event.capacity <= 0:
-        return jsonify({"error": "Event is full"}), 400
-
-    # ✅ Add user to event
-    event.attendees.append(current_user)
-    event.capacity -= 1
-
-    db.session.commit()
-    return redirect(url_for("main.profile"))
-
-
-
-#Not working for users registered for events
-@attendees_blueprint.route("/event/<int:event_id>/attendees", methods=["GET"])
-def get_attendee(event_id):
-    """Display all attendees for a specific event."""
+    event_id = request.form.get('eventId')
     event = Event.query.get_or_404(event_id)
+    
+    # Check if already registered
+    existing = Attendee.query.filter_by(
+        user_id=current_user.id, 
+        event_id=event_id
+    ).first()
+    
+    if existing:
+        flash('You are already registered for this event!', 'warning')
+        return redirect(url_for('events.profile'))
+    
+    # Check capacity
+    current_attendees = Attendee.query.filter_by(event_id=event_id).count()
+    if current_attendees >= event.capacity:
+        flash('Sorry, this event is full!', 'danger')
+        return redirect(url_for('events.profile'))
+    
+    # Generate unique token
+    token = secrets.token_urlsafe(32)
+    
+    # Create attendee record first (to get the ID)
+    attendee = Attendee(
+        user_id=current_user.id,
+        event_id=event_id,
+        token=token
+    )
+    
+    db.session.add(attendee)
+    db.session.flush()  # Get the attendee ID without committing
+    
+    # Create QR code with attendee information
+    qr_data = {
+        'attendee_id': attendee.id,
+        'user_id': current_user.id,
+        'event_id': event_id,
+        'token': token,
+        'username': current_user.username,
+        'event_name': event.title
+    }
+    
+    # Convert to JSON string for QR
+    import json
+    qr_content = json.dumps(qr_data)
+    
+    # Generate QR code
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(qr_content)
+    qr.make(fit=True)
+    
+    # Create the QR image
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    # Save QR code
+    qr_dir = os.path.join('static', 'qr_codes')
+    os.makedirs(qr_dir, exist_ok=True)
+    qr_filename = f'qr_{current_user.id}_{event_id}_{attendee.id}.png'
+    qr_path = os.path.join(qr_dir, qr_filename)
+    
+    img.save(qr_path)
+    
+    # Update attendee with QR path
+    attendee.qr_code_path = f'qr_codes/{qr_filename}'
+    
+    db.session.commit()
+    
+    flash('Successfully registered for the event!', 'success')
+    return redirect(url_for('attendees.registration_success', 
+                          attendee_id=attendee.id))
 
-    # Only organizer or admin can see attendees
-    # if event.organizer_id != current_user.id:
-    #     flash("You are not authorized to view attendees for this event.", "danger")
-    #     return redirect(url_for("events.all_events"))
+@attendees_blueprint.route('/registration-success/<int:attendee_id>')
+@login_required
+def registration_success(attendee_id):
+    attendee = Attendee.query.get_or_404(attendee_id)
+    
+    # Security check: only show to the registered user
+    if attendee.user_id != current_user.id:
+        flash('Access denied', 'danger')
+        return redirect(url_for('events.profile'))
+    
+    event = attendee.event
+    
+    return render_template('registration_success.html', 
+                         attendee=attendee, 
+                         event=event)
 
-    attendees = event.attendees
-    return render_template("eventattend.html", event=event, attendees=attendees)
-
-
-
-@attendees_blueprint.route("/unregister/<int:event_id>", methods=["POST"])
+@attendees_blueprint.route('/unregister/<int:event_id>', methods=['POST'])
 @login_required
 def unregister_attendee(event_id):
-    """Unregister the current user from a given event."""
-    event = Event.query.get_or_404(event_id)
-
-    if current_user not in event.attendees:
-        return jsonify({"message": "You are not registered for this event"}), 400
-
-    event.attendees.remove(current_user)
+    # Find the attendee record
+    attendee = Attendee.query.filter_by(
+        user_id=current_user.id,
+        event_id=event_id
+    ).first()
+    
+    if not attendee:
+        flash('You are not registered for this event.', 'warning')
+        return redirect(url_for('events.profile'))
+    
+    # Delete QR code file if it exists
+    if attendee.qr_code_path:
+        qr_full_path = os.path.join('static', attendee.qr_code_path)
+        if os.path.exists(qr_full_path):
+            try:
+                os.remove(qr_full_path)
+            except Exception as e:
+                print(f"Error deleting QR code: {e}")
+    
+    # Delete attendee record
+    db.session.delete(attendee)
     db.session.commit()
+    
+    flash(f'Successfully unregistered from the event!', 'success')
+    return redirect(url_for('events.profile'))
 
-    return redirect(url_for("main.profile"))
-# @attendees_blueprint.route("/<int:attendee_id>", methods=["PUT"])
-# def update_attendee(attendee_id):
-#     """Update full attendee record."""
-#     return jsonify({"message": f"Attendee {attendee_id} updated"}), 200
-
-# @attendees_blueprint.route("/<int:attendee_id>/events", methods=["GET"])
-# def attendee_events(attendee_id):
-#     """List events the attendee is registered for."""
-#     return jsonify({"message": f"Events for attendee {attendee_id}"}), 200
+@attendees_blueprint.route('/event/<int:event_id>/attendees')
+@login_required
+def get_attendee(event_id):
+    event = Event.query.get_or_404(event_id)
+    
+    # Get all attendees for this event
+    attendees = Attendee.query.filter_by(event_id=event_id).all()
+    
+    return render_template('attendees_list.html', 
+                         event=event, 
+                         attendees=attendees)
