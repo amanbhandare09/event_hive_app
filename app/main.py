@@ -218,7 +218,7 @@ def create_attendee():
         flash("You cannot register for your own event!", "danger")
         return redirect(url_for("main.profile"))
 
-    # Already attendee check (your DB Attendee system)
+    # Already attendee check
     existing_attendee = Attendee.query.filter_by(
         user_id=current_user.id,
         event_id=event_id
@@ -230,7 +230,6 @@ def create_attendee():
 
     # PRIVATE EVENT → Send join request instead of registering
     if event.visibility == EventVisibility.private:
-
         existing_request = JoinRequest.query.filter_by(
             event_id=event.id,
             user_id=current_user.id
@@ -258,7 +257,7 @@ def create_attendee():
     # Generate unique token
     token = secrets.token_urlsafe(32)
 
-    # Create attendee record (not committed yet)
+    # Create attendee record
     attendee = Attendee(
         user_id=current_user.id,
         event_id=event_id,
@@ -267,6 +266,10 @@ def create_attendee():
 
     db.session.add(attendee)
     db.session.flush()  # Get attendee.id
+
+    # ✅ ADD THIS: Add user to the many-to-many relationship
+    if current_user not in event.attendees:
+        event.attendees.append(current_user)
 
     # Create QR Code metadata
     qr_data = {
@@ -278,7 +281,6 @@ def create_attendee():
         "event_name": event.title
     }
 
-    
     qr_content = json.dumps(qr_data)
 
     # Generate QR Code
@@ -309,7 +311,6 @@ def create_attendee():
     return redirect(
         url_for("attendees.registration_success", attendee_id=attendee.id)
     )
-
 
 @attendees_blueprint.route('/registration-success/<int:attendee_id>')
 @login_required
