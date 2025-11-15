@@ -2,7 +2,7 @@ from flask import Blueprint, flash, jsonify, redirect, request, render_template,
 from datetime import datetime
 from flask_login import current_user, login_required
 from app import db
-from models.model import Event, EventMode, User, event_attendees, EventVisibility, Eventtag, JoinRequest
+from models.model import Event, EventMode, User, event_attendees, EventVisibility, Eventtag, JoinRequest , Attendee
 
 main_blueprint = Blueprint("main", __name__)
 events_blueprint = Blueprint("events", __name__)

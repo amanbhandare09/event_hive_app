@@ -16,7 +16,7 @@ class EventMode(enum.Enum):
     online = "online"
     offline = "offline"
 
-# ✅ New enum for visibility
+# New enum for visibility
 class EventVisibility(enum.Enum):
     public = "public"
     private = "private"
@@ -67,17 +67,20 @@ class Event(db.Model):
     capacity = db.Column(db.Integer, default=100)
     tags = db.Column(db.Enum(Eventtag), default=Eventtag.CELEBRATION, nullable=False)
 
-    # ✅ New column for public/private events
+    # public/private
     visibility = db.Column(db.Enum(EventVisibility), default=EventVisibility.public, nullable=False)
 
-    # Link to creator (User)
+    # Link to creator
     organizer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     creator = db.relationship("User", backref=db.backref("created_events", lazy=True))
 
-    # Many-to-many relationship with users
+    # Many-to-many attendees
     attendees = db.relationship(
         "User", secondary=event_attendees, back_populates="attending_events"
     )
+
+    # New one-to-many to Attendee table
+    attendee_links = db.relationship("Attendee", back_populates="event", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Event {self.title}, Visibility={self.visibility.value}>"
@@ -91,13 +94,17 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
 
-    # Many-to-many: user can attend multiple events
+    # Many-to-many
     attending_events = db.relationship(
         "Event", secondary=event_attendees, back_populates="attendees"
     )
 
+    # New one-to-many to Attendee model
+    attendee_links = db.relationship("Attendee", back_populates="user", cascade="all, delete-orphan")
+
     def __repr__(self):
         return f"<User {self.username}>"
+
 
 class JoinRequest(db.Model):
     __tablename__ = "join_requests"
@@ -112,3 +119,21 @@ class JoinRequest(db.Model):
     # Relations
     user = db.relationship("User", backref=db.backref("join_requests", lazy=True))
     event = db.relationship("Event", backref=db.backref("join_requests", lazy=True))
+
+
+# ✅ NEW TABLE: Attendee (with QR + token)
+class Attendee(db.Model):
+    __tablename__ = "attendees"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey("events.id"), nullable=False)
+
+    token = db.Column(db.String(255), unique=True, nullable=False)
+    qr_code_path = db.Column(db.String(255))
+    has_attended = db.Column(db.Boolean, default=False)
+
+    # Relationships
+    user = db.relationship("User", back_populates="attendee_links")
+    event = db.relationship("Event", back_populates="attendee_links")
