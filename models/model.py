@@ -98,3 +98,17 @@ class User(db.Model, UserMixin):
 
     def __repr__(self):
         return f"<User {self.username}>"
+
+class JoinRequest(db.Model):
+    __tablename__ = "join_requests"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey("events.id"), nullable=False)
+
+    status = db.Column(db.String(20), default="pending")  # pending / approved / rejected
+
+    # Relations
+    user = db.relationship("User", backref=db.backref("join_requests", lazy=True))
+    event = db.relationship("Event", backref=db.backref("join_requests", lazy=True))
