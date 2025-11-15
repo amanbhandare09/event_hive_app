@@ -1,6 +1,10 @@
-from flask import Blueprint, flash, jsonify, redirect, request, render_template, url_for
+import os
+import secrets
+from flask import Blueprint, current_app, flash, jsonify, redirect, request, render_template, url_for
 from datetime import datetime
 from flask_login import current_user, login_required
+import qrcode
+import json
 from app import db
 from models.model import Event, EventMode, User, event_attendees, EventVisibility, Eventtag, JoinRequest , Attendee
 
@@ -203,32 +207,36 @@ def delete_event(event_id):
 @attendees_blueprint.route("/register", methods=["POST"])
 @login_required
 def create_attendee():
-
-    eventId = request.form.get("eventId")
-    if not eventId:
+    event_id = request.form.get("eventId")
+    if not event_id:
         return "eventId missing", 400
 
-    event = Event.query.get(eventId)
-    if not event:
-        return "event not found", 404
+    event = Event.query.get_or_404(event_id)
 
-    # Organizer cannot register their own event
+    # Organizer cannot register for their own event
     if event.organizer_id == current_user.id:
-        return jsonify({"error": "You cannot register for your own event"}), 400
+        flash("You cannot register for your own event!", "danger")
+        return redirect(url_for("main.profile"))
 
-    # Already attendee
-    if current_user in event.attendees:
-        return jsonify({"error": "Already registered"}), 400
+    # Already attendee check (your DB Attendee system)
+    existing_attendee = Attendee.query.filter_by(
+        user_id=current_user.id,
+        event_id=event_id
+    ).first()
 
-    # PRIVATE EVENT -> send join request
+    if existing_attendee:
+        flash("You are already registered for this event!", "warning")
+        return redirect(url_for("main.profile"))
+
+    # PRIVATE EVENT → Send join request instead of registering
     if event.visibility == EventVisibility.private:
 
-        existing = JoinRequest.query.filter_by(
+        existing_request = JoinRequest.query.filter_by(
             event_id=event.id,
             user_id=current_user.id
         ).first()
 
-        if not existing:
+        if not existing_request:
             new_req = JoinRequest(
                 event_id=event.id,
                 user_id=current_user.id,
@@ -237,17 +245,87 @@ def create_attendee():
             db.session.add(new_req)
             db.session.commit()
 
+        flash("Join request sent! Please wait for approval.", "info")
         return redirect(url_for("main.profile"))
 
-    # PUBLIC EVENT -> register directly
-    if event.capacity <= 0:
-        return jsonify({"error": "Event is full"}), 400
+    # PUBLIC EVENT → Register directly
+    # Check capacity
+    current_attendees = Attendee.query.filter_by(event_id=event_id).count()
+    if current_attendees >= event.capacity:
+        flash("Sorry, this event is full!", "danger")
+        return redirect(url_for("main.profile"))
 
-    event.attendees.append(current_user)
-    event.capacity -= 1
+    # Generate unique token
+    token = secrets.token_urlsafe(32)
+
+    # Create attendee record (not committed yet)
+    attendee = Attendee(
+        user_id=current_user.id,
+        event_id=event_id,
+        token=token
+    )
+
+    db.session.add(attendee)
+    db.session.flush()  # Get attendee.id
+
+    # Create QR Code metadata
+    qr_data = {
+        "attendee_id": attendee.id,
+        "user_id": current_user.id,
+        "event_id": event_id,
+        "token": token,
+        "username": current_user.username,
+        "event_name": event.title
+    }
+
+    
+    qr_content = json.dumps(qr_data)
+
+    # Generate QR Code
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(qr_content)
+    qr.make(fit=True)
+
+    # Save QR image
+    img = qr.make_image(fill_color="black", back_color="white")
+    qr_dir = os.path.join(current_app.root_path, "static", "qr_codes")
+    os.makedirs(qr_dir, exist_ok=True)
+
+    qr_filename = f"qr_{current_user.id}_{event_id}_{attendee.id}.png"
+    qr_path = os.path.join(qr_dir, qr_filename)
+    img.save(qr_path)
+
+    # Store QR path
+    attendee.qr_code_path = f"qr_codes/{qr_filename}"
+
     db.session.commit()
 
-    return redirect(url_for("main.profile"))
+    flash("Successfully registered for the event!", "success")
+    return redirect(
+        url_for("attendees.registration_success", attendee_id=attendee.id)
+    )
+
+
+@attendees_blueprint.route('/registration-success/<int:attendee_id>')
+@login_required
+def registration_success(attendee_id):
+    attendee = Attendee.query.get_or_404(attendee_id)
+    
+    # Security check: only show to the registered user
+    if attendee.user_id != current_user.id:
+        flash('Access denied', 'danger')
+        return redirect(url_for('main.profile'))
+    
+    event = attendee.event
+    
+    return render_template('registration_success.html', 
+                         attendee=attendee, 
+                         event=event)
 
 
 # -------------------------------------
@@ -270,11 +348,17 @@ def unregister_attendee(event_id):
 # -------------------------------------
 # VIEW EVENT ATTENDEES
 # -------------------------------------
-@attendees_blueprint.route("/event/<int:event_id>/attendees", methods=["GET"])
+@attendees_blueprint.route('/event/<int:event_id>/attendees')
+@login_required
 def get_attendee(event_id):
     event = Event.query.get_or_404(event_id)
-    attendees = event.attendees
-    return render_template("eventattend.html", event=event, attendees=attendees)
+    
+    # Get all attendees for this event
+    attendees = Attendee.query.filter_by(event_id=event_id).all()
+    
+    return render_template('attendees_list.html', 
+                         event=event, 
+                         attendees=attendees)
 
 # -------------------------------------
 # APPROVE JOIN REQUEST

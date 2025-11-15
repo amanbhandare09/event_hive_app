@@ -41,3 +41,7 @@ def create_app():
     app.register_blueprint(attendees_blueprint)
 
     return app
+
+if __name__ == "__main__":
+    application = create_app()
+    application.run(debug=True)

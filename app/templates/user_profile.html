@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+
+{% block title %}User Profile | EventHive{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #0d0d0d, #064420);
+    }
+
+    .profile-container {
+        background: rgba(0, 0, 0, 0.8);
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 0 20px rgba(0, 255, 100, 0.2);
+        width: 100%;
+        max-width: 1200px;
+        margin: 40px auto;
+        color: #fff;
+    }
+
+    .profile-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: #00ff88;
+        color: #000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 48px;
+        font-weight: bold;
+        margin: 0 auto 1rem;
+    }
+
+    h1 {
+        color: #00ff88;
+        margin-bottom: 5px;
+    }
+
+    .profile-section {
+        margin-bottom: 2.5rem;
+    }
+
+    .profile-section h2 {
+        color: #00ff88;
+        border-bottom: 1px solid #00ff88;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+
+    .info-item {
+        background: rgba(255,255,255,0.05);
+        padding: 1rem;
+        border-radius: 8px;
+    }
+
+    .info-label {
+        font-size: 12px;
+        opacity: 0.6;
+    }
+
+    .info-value {
+        margin-top: 5px;
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-top: 2rem;
+    }
+
+    .btn {
+        padding: 12px 25px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 15px;
+        display: inline-block;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: #00ff88;
+        color: #000;
+    }
+
+    .btn-primary:hover { background: #00cc6a; }
+
+    .btn-secondary {
+        background: transparent;
+        border: 2px solid #00ff88;
+        color: #00ff88;
+    }
+
+    .btn-secondary:hover {
+        background: #00ff88;
+        color: #000;
+    }
+
+    .btn-logout {
+        background: #dc3545;
+        color: #fff;
+    }
+
+    .btn-logout:hover { background: #b52a36; }
+
+    /* Flash messages */
+    .flash-message {
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .flash-success {
+        background: #004d2b;
+        border-left: 4px solid #00ff88;
+    }
+
+    .flash-error {
+        background: #4d0007;
+        border-left: 4px solid #ff4d4d;
+    }
+
+    .flash-info {
+        background: #003344;
+        border-left: 4px solid #00e1ff;
+    }
+
+    /* Events Grid */
+    .events-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    .event-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 1.5rem;
+        border: 1px solid rgba(0, 255, 136, 0.2);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .event-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(0, 255, 136, 0.3);
+        border-color: #00ff88;
+    }
+
+    .event-card h3 {
+        color: #00ff88;
+        margin-bottom: 0.5rem;
+        font-size: 18px;
+    }
+
+    .event-detail {
+        display: flex;
+        align-items: center;
+        margin: 0.5rem 0;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .event-detail svg {
+        width: 16px;
+        height: 16px;
+        margin-right: 8px;
+        stroke: #00ff88;
+    }
+
+    .event-tag {
+        display: inline-block;
+        background: rgba(0, 255, 136, 0.2);
+        color: #00ff88;
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 12px;
+        margin-top: 0.5rem;
+    }
+
+    .event-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 1rem;
+    }
+
+    .btn-small {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+
+    .no-events {
+        text-align: center;
+        padding: 3rem;
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .no-events svg {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+    }
+
+    /* Modal for QR Code */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+
+    .modal-content {
+        background: rgba(0, 0, 0, 0.95);
+        margin: 5% auto;
+        padding: 2rem;
+        border: 2px solid #00ff88;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        text-align: center;
+    }
+
+    .modal-content h3 {
+        color: #00ff88;
+        margin-bottom: 1rem;
+    }
+
+    .modal-content img {
+        max-width: 100%;
+        border-radius: 8px;
+        background: white;
+        padding: 20px;
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .close:hover {
+        color: #00ff88;
+    }
+
+    .attendance-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 12px;
+        margin-top: 0.5rem;
+        font-weight: bold;
+    }
+
+    .badge-attended {
+        background: rgba(0, 255, 136, 0.3);
+        color: #00ff88;
+    }
+
+    .badge-pending {
+        background: rgba(255, 193, 7, 0.3);
+        color: #ffc107;
+    }
+
+    @media (max-width: 768px) {
+        .events-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="profile-container">
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="profile-avatar">
+            {{ user.username[0].upper() }}
+        </div>
+        <h1>{{ user.username }}</h1>
+        <p>Member since {{ user.created_at.strftime('%B %Y') if user.created_at else 'Recently' }}</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Account Information -->
+    <div class="profile-section">
+        <h2>Account Information</h2>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Username</div>
+                <div class="info-value">{{ user.username }}</div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-label">Email</div>
+                <div class="info-value">{{ user.email }}</div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-label">User ID</div>
+                <div class="info-value">#{{ user.id }}</div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-label">Status</div>
+                <div class="info-value">Active</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registered Events Section -->
+    <div class="profile-section">
+        <h2>My Registered Events ({{ user.attending_events|length }})</h2>
+
+        {% if user.attending_events %}
+            <div class="events-grid">
+                {% for event in user.attending_events %}
+                    <div class="event-card">
+                        <h3>{{ event.title }}</h3>
+                        
+                        <div class="event-detail">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                            </svg>
+                            {{ event.date.strftime('%B %d, %Y') }}
+                        </div>
+
+                        {% if event.starttime %}
+                        <div class="event-detail">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {{ event.starttime.strftime('%I:%M %p') }}
+                            {% if event.endtime %}- {{ event.endtime.strftime('%I:%M %p') }}{% endif %}
+                        </div>
+                        {% endif %}
+
+                        {% if event.venue %}
+                        <div class="event-detail">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                            </svg>
+                            {{ event.venue }}
+                        </div>
+                        {% endif %}
+
+                        <span class="event-tag">{{ event.tags.value if event.tags else 'Event' }}</span>
+                        
+                        {% set attendee = user.attendee_links|selectattr('event_id', 'equalto', event.id)|first %}
+                        {% if attendee %}
+                            {% if attendee.has_attended %}
+                                <span class="attendance-badge badge-attended">✓ Attended</span>
+                            {% else %}
+                                <span class="attendance-badge badge-pending">Pending Attendance</span>
+                            {% endif %}
+                        {% endif %}
+
+                        <div class="event-actions">
+                            <a href="{{ url_for('main.event_details', event_id=event.id) }}" class="btn btn-secondary btn-small">View Details</a>
+                            
+                            {% set attendee = user.attendee_links|selectattr('event_id', 'equalto', event.id)|first %}
+                            {% if attendee and attendee.qr_code_path %}
+                                <button class="btn btn-primary btn-small" onclick="showQR('{{ event.title }}', '{{ url_for('static', filename=attendee.qr_code_path) }}')">View QR Code</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-events">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                </svg>
+                <p>You haven't registered for any events yet.</p>
+                <a href="{{ url_for('main.index') }}" class="btn btn-primary" style="margin-top: 1rem;">Browse Events</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Actions -->
+    <div class="profile-section">
+        <div class="action-buttons">
+            <a href="#" class="btn btn-primary">Edit Profile</a>
+            <a href="#" class="btn btn-secondary">Change Password</a>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-logout">Logout</a>
+        </div>
+    </div>
+
+</div>
+
+<!-- QR Code Modal -->
+<div id="qrModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeQR()">&times;</span>
+        <h3 id="modalEventTitle"></h3>
+        <p style="color: rgba(255,255,255,0.6); margin-bottom: 1rem;">Show this QR code at the event for attendance verification</p>
+        <img id="modalQRImage" src="" alt="QR Code">
+        <button class="btn btn-primary" style="margin-top: 1rem;" onclick="downloadQR()">Download QR Code</button>
+    </div>
+</div>
+
+<script>
+    let currentQRUrl = '';
+
+    function showQR(eventTitle, qrUrl) {
+        currentQRUrl = qrUrl;
+        document.getElementById('modalEventTitle').textContent = eventTitle;
+        document.getElementById('modalQRImage').src = qrUrl;
+        document.getElementById('qrModal').style.display = 'block';
+    }
+
+    function closeQR() {
+        document.getElementById('qrModal').style.display = 'none';
+    }
+
+    function downloadQR() {
+        const link = document.createElement('a');
+        link.href = currentQRUrl;
+        link.download = 'event-qr-code.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('qrModal');
+        if (event.target == modal) {
+            closeQR();
+        }
+    }
+</script>
+
+{% endblock %}
