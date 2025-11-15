@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, jsonify, redirect, request, render_template, url_for
+from flask import Blueprint, current_app, flash, jsonify, redirect, request, render_template, url_for
 from datetime import datetime
 import secrets
 import qrcode
@@ -249,9 +249,10 @@ def create_attendee():
     img = qr.make_image(fill_color="black", back_color="white")
     
     # Save QR code
-    qr_dir = os.path.join('static', 'qr_codes')
+    qr_dir = os.path.join(current_app.root_path, 'static', 'qr_codes')
     os.makedirs(qr_dir, exist_ok=True)
-    qr_filename = f'qr_{current_user.id}_{event_id}_{attendee.id}.png'
+
+    qr_filename = f"qr_{current_user.id}_{event_id}_{attendee.id}.png"
     qr_path = os.path.join(qr_dir, qr_filename)
     
     img.save(qr_path)
@@ -308,7 +309,8 @@ def unregister_attendee(event_id):
     db.session.commit()
     
     flash(f'Successfully unregistered from the event!', 'success')
-    return redirect(url_for('events.profile'))
+    return redirect(url_for('main.profile'))
+
 
 @attendees_blueprint.route('/event/<int:event_id>/attendees')
 @login_required
