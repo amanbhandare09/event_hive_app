@@ -1,96 +1,293 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event Attendees</title>
+{% block title %}Event Attendees | EventHive{% endblock %}
 
-    <!-- Bootstrap CDN -->
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-        rel="stylesheet">
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #0d0d0d, #064420);
+        min-height: 100vh;
+    }
 
-    <style>
-        body {
-            background-color: #f5f6fa;
+    .attendees-container {
+        background: rgba(0, 0, 0, 0.8);
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 0 20px rgba(0, 255, 100, 0.2);
+        width: 100%;
+        max-width: 1200px;
+        margin: 40px auto;
+        color: #fff;
+    }
+
+    h2 {
+        color: #00ff88;
+        margin-bottom: 1.5rem;
+        font-weight: bold;
+    }
+
+    h2 strong {
+        color: #fff;
+    }
+
+    .btn-back {
+        background: transparent;
+        border: 2px solid #00ff88;
+        color: #00ff88;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        display: inline-block;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s;
+    }
+
+    .btn-back:hover {
+        background: #00ff88;
+        color: #000;
+    }
+
+    .alert-info {
+        background: rgba(0, 225, 255, 0.2);
+        border: 1px solid #00e1ff;
+        border-left: 4px solid #00e1ff;
+        color: #00e1ff;
+        padding: 1rem;
+        border-radius: 8px;
+    }
+
+    .attendees-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        overflow: hidden;
+        border-radius: 8px;
+    }
+
+    .attendees-table thead {
+        background: rgba(0, 255, 136, 0.2);
+    }
+
+    .attendees-table thead th {
+        padding: 15px;
+        text-align: left;
+        color: #00ff88;
+        font-weight: bold;
+        border-bottom: 2px solid #00ff88;
+    }
+
+    .attendees-table tbody tr {
+        background: rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        transition: background 0.3s;
+    }
+
+    .attendees-table tbody tr:hover {
+        background: rgba(0, 255, 136, 0.1);
+    }
+
+    .attendees-table tbody td {
+        padding: 15px;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .qr-img {
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        background: white;
+        padding: 5px;
+        cursor: pointer;
+        transition: transform 0.3s;
+    }
+
+    .qr-img:hover {
+        transform: scale(1.1);
+    }
+
+    .badge {
+        padding: 6px 12px;
+        border-radius: 15px;
+        font-size: 12px;
+        font-weight: bold;
+        display: inline-block;
+    }
+
+    .badge-success {
+        background: rgba(0, 255, 136, 0.3);
+        color: #00ff88;
+        border: 1px solid #00ff88;
+    }
+
+    .badge-danger {
+        background: rgba(220, 53, 69, 0.3);
+        color: #ff6b6b;
+        border: 1px solid #ff6b6b;
+    }
+
+    .text-muted {
+        color: rgba(255, 255, 255, 0.4);
+        font-style: italic;
+    }
+
+    /* Modal for QR Code */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+    }
+
+    .modal-content {
+        background: rgba(0, 0, 0, 0.95);
+        margin: 5% auto;
+        padding: 2rem;
+        border: 2px solid #00ff88;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        text-align: center;
+    }
+
+    .modal-content h3 {
+        color: #00ff88;
+        margin-bottom: 1rem;
+    }
+
+    .modal-content img {
+        max-width: 100%;
+        border-radius: 8px;
+        background: white;
+        padding: 20px;
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .close:hover {
+        color: #00ff88;
+    }
+
+    .attendee-count {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 14px;
+        margin-top: 0.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .attendees-table {
+            font-size: 14px;
         }
 
-        .container-box {
-            background: white;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        .attendees-table thead th,
+        .attendees-table tbody td {
+            padding: 10px;
         }
 
-        img.qr-img {
-            width: 90px;
-            border-radius: 8px;
+        .qr-img {
+            width: 60px;
+            height: 60px;
         }
-    </style>
-</head>
+    }
+</style>
+{% endblock %}
 
-<body>
+{% block content %}
 
-    <div class="container mt-5">
-        <div class="container-box">
+<div class="attendees-container">
+    <h2>Attendees for: <strong>{{ event.title }}</strong></h2>
+    <p class="attendee-count">Total Registered: {{ attendees|length }}</p>
 
-            <h2 class="mb-4">Attendees for: <strong>{{ event.title }}</strong></h2>
+    <a href="{{ url_for('main.profile') }}" class="btn-back">
+        ← Back to Profile
+    </a>
 
-            <a href="{{ url_for('main.profile', event_id=event.id) }}" class="btn btn-secondary mb-3">
-                ← Back to Event
-            </a>
-
-            {% if attendees|length == 0 %}
-            <div class="alert alert-info">
-                No attendees have registered yet.
-            </div>
-            {% else %}
-
-            <table class="table table-bordered table-striped">
-                <thead class="table-dark">
-                    <tr>
-                        <th>#</th>
-                        <th>User</th>
-                        <th>Email</th>
-                        <th>QR Code</th>
-                        <th>Attendance</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for attendee in attendees %}
-                    <tr>
-                        <td>{{ loop.index }}</td>
-                        <td>{{ attendee.user.username }}</td>
-                        <td>{{ attendee.user.email }}</td>
-
-                        <td>
-                            {% if attendee.qr_code_path %}
-                            <img
-                                src="{{ url_for('static', filename='qr_codes/' + attendee.qr_code_path.split('/')[-1]) }}"
-                                alt="QR Code"
-                                class="qr-img">
-                            {% else %}
-                            <span class="text-muted">Not generated</span>
-                            {% endif %}
-                        </td>
-
-                        <td>
-                            {% if attendee.has_attended %}
-                            <span class="badge bg-success">Present</span>
-                            {% else %}
-                            <span class="badge bg-danger">Not Yet</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            {% endif %}
+    {% if attendees|length == 0 %}
+        <div class="alert-info">
+            No attendees have registered yet for this event.
         </div>
+    {% else %}
+        <table class="attendees-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>QR Code</th>
+                    <th>Attendance Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for attendee in attendees %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ attendee.user.username }}</td>
+                    <td>{{ attendee.user.email }}</td>
+
+                    <td>
+                        {% if attendee.qr_code_path %}
+                            <img
+                                src="{{ url_for('static', filename=attendee.qr_code_path) }}"
+                                alt="QR Code for {{ attendee.user.username }}"
+                                class="qr-img"
+                                onclick="showQR('{{ attendee.user.username }}', '{{ url_for('static', filename=attendee.qr_code_path) }}')">
+                        {% else %}
+                            <span class="text-muted">Not generated</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if attendee.has_attended %}
+                            <span class="badge badge-success">✓ Present</span>
+                        {% else %}
+                            <span class="badge badge-danger">✗ Not Yet</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</div>
+
+<!-- QR Code Modal -->
+<div id="qrModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeQR()">&times;</span>
+        <h3 id="modalUsername"></h3>
+        <p style="color: rgba(255,255,255,0.6); margin-bottom: 1rem;">Attendee QR Code</p>
+        <img id="modalQRImage" src="" alt="QR Code">
     </div>
+</div>
 
-</body>
+<script>
+    function showQR(username, qrUrl) {
+        document.getElementById('modalUsername').textContent = username;
+        document.getElementById('modalQRImage').src = qrUrl;
+        document.getElementById('qrModal').style.display = 'block';
+    }
 
-</html>
+    function closeQR() {
+        document.getElementById('qrModal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('qrModal');
+        if (event.target == modal) {
+            closeQR();
+        }
+    }
+</script>
+
+{% endblock %}
