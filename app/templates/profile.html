@@ -10,6 +10,40 @@
   padding: 20px;
 }
 
+.search-box {
+  background: #111;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+
+.search-box input,
+.search-box select {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.search-btn {
+  width: 100%;
+  padding: 12px;
+  background: #4CAF50;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.search-btn:hover {
+  background: #45a049;
+}
+
 .event-card {
   background-color: #1a1a1a;
   border-left: 5px solid #4CAF50;
@@ -110,11 +144,52 @@
 {% block content %}
 
 <div class="event-container">
+
+    <!-- 🔍 SEARCH SECTION -->
+    <div class="search-box">
+        <form method="GET" action="{{ url_for('main.profile') }}">
+
+            <input type="text" name="title" placeholder="Search by title" 
+                   value="{{ request.args.get('title', '') }}">
+
+            <input type="text" name="tag" placeholder="Search by tag" 
+                   value="{{ request.args.get('tag', '') }}">
+
+            <input type="text" name="organizer" placeholder="Search by organizer name" 
+                   value="{{ request.args.get('organizer', '') }}">
+
+            <label style="color:#aaa;">Date:</label>
+            <input type="date" name="date" value="{{ request.args.get('date', '') }}">
+
+            <select name="visibility">
+                <option value="">Visibility (All)</option>
+                <option value="public" 
+                    {% if request.args.get('visibility')=='public' %}selected{% endif %}>Public</option>
+                <option value="private" 
+                    {% if request.args.get('visibility')=='private' %}selected{% endif %}>Private</option>
+            </select>
+
+            <input type="text" name="location" placeholder="Search by location" 
+                   value="{{ request.args.get('location', '') }}">
+
+            <select name="mode">
+                <option value="">Mode (All)</option>
+                <option value="online" 
+                    {% if request.args.get('mode')=='online' %}selected{% endif %}>Online</option>
+                <option value="offline" 
+                    {% if request.args.get('mode')=='offline' %}selected{% endif %}>Offline</option>
+            </select>
+
+            <button type="submit" class="search-btn">Search</button>
+        </form>
+    </div>
+
     <h2>All Events</h2>
 
     {% if events %}
         {% for event in events %}
             <div class="event-card">
+
                 <div class="event-title">
                     {{ event.title }}
                     <span class="visibility-tag {% if event.visibility.value == 'private' %}private{% else %}public{% endif %}">
@@ -128,66 +203,63 @@
                     Date: {{ event.date.strftime('%d %b %Y') }} |
                     Time: {{ event.starttime.strftime('%I:%M %p') }} - {{ event.endtime.strftime('%I:%M %p') }} |
                     Location: {{ event.venue }} |
-                    Tag: {{ event.tags.value }}
+                    Tag: {{ event.tags.value }} |
+                    Mode: {{ event.mode }}
                 </div>
 
                 {% if event.creator.id == current_user.id %}
                     <div class="created-by-you">Created by you</div>
 
                     {% if event.visibility.value == 'private' %}
-                        <a href="{{ url_for('events.view_join_requests', event_id=event.id) }}" class="attendees-btn">
+                        <a href="{{ url_for('events.view_join_requests', event_id=event.id) }}" 
+                           class="attendees-btn">
                             View Requests
                         </a>
                     {% endif %}
 
-                    <form action="{{ url_for('events.delete_event', event_id=event.id) }}" method="POST" style="display:inline;">
+                    <form action="{{ url_for('events.delete_event', event_id=event.id) }}" 
+                          method="POST" style="display:inline;">
                         <button type="submit" class="delete-btn">Delete</button>
                     </form>
 
-                    <a href="{{ url_for('events.load_update_event_page', event_id=event.id) }}" class="update-btn">Update</a>
+                    <a href="{{ url_for('events.load_update_event_page', event_id=event.id) }}" 
+                       class="update-btn">Update</a>
 
                 {% else %}
-                    {# Check if user is registered (either in attendees many-to-many OR has Attendee record) #}
                     {% set is_registered = current_user in event.attendees %}
                     {% set attendee_record = current_user.attendee_links|selectattr('event_id', 'equalto', event.id)|first %}
-                    
+
                     {% if is_registered or attendee_record %}
-                        {# User is already registered #}
                         {% if event.visibility.value == 'public' %}
-                            <form action="{{ url_for('attendees.unregister_attendee', event_id=event.id) }}" method="POST" style="display:inline;">
+                            <form action="{{ url_for('attendees.unregister_attendee', event_id=event.id) }}" 
+                                  method="POST" style="display:inline;">
                                 <button type="submit" class="delete-btn">Unregister</button>
                             </form>
                         {% else %}
                             <button class="register-btn" disabled>Already Registered</button>
                         {% endif %}
-
                     {% else %}
-                        {# User is NOT registered yet #}
                         {% if event.visibility.value == 'private' %}
-                            {# Private event - check join request status #}
                             {% if event.id in user_requests %}
                                 {% set status = user_requests[event.id] %}
 
                                 {% if status == "pending" %}
                                     <button class="register-btn" disabled>Request Pending</button>
-
                                 {% elif status == "approved" %}
                                     <button class="register-btn" disabled>Approved</button>
-
                                 {% elif status == "rejected" %}
                                     <button class="delete-btn" disabled>Request Rejected</button>
                                 {% endif %}
-
                             {% else %}
-                                <form action="{{ url_for('attendees.create_attendee') }}" method="POST" style="display:inline;">
+                                <form action="{{ url_for('attendees.create_attendee') }}" 
+                                      method="POST" style="display:inline;">
                                     <input type="hidden" name="eventId" value="{{ event.id }}">
                                     <button type="submit" class="register-btn">Send Request</button>
                                 </form>
                             {% endif %}
-
                         {% else %}
-                            {# Public event - direct registration #}
-                            <form action="{{ url_for('attendees.create_attendee') }}" method="POST" style="display:inline;">
+                            <form action="{{ url_for('attendees.create_attendee') }}" 
+                                  method="POST" style="display:inline;">
                                 <input type="hidden" name="eventId" value="{{ event.id }}">
                                 <button type="submit" class="register-btn">Register</button>
                             </form>
@@ -195,7 +267,8 @@
                     {% endif %}
                 {% endif %}
 
-                <a href="{{ url_for('attendees.get_attendee', event_id=event.id) }}" class="attendees-btn">
+                <a href="{{ url_for('attendees.get_attendee', event_id=event.id) }}" 
+                   class="attendees-btn">
                     View Attendees
                 </a>
 

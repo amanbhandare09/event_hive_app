@@ -28,19 +28,62 @@ def index():
 @login_required
 def profile():
 
-    events = Event.query.all()
+    # Read search filters from request
+    title = request.args.get("title", "").strip()
+    tag = request.args.get("tag", "").strip()
+    organizer = request.args.get("organizer", "").strip()
+    date = request.args.get("date", "").strip()
+    visibility = request.args.get("visibility", "").strip()
+    location = request.args.get("location", "").strip()
+    mode = request.args.get("mode", "").strip()
 
-    # Get all join requests created by the current user
-    user_join_requests = JoinRequest.query.filter_by(user_id=current_user.id).all()
+    # Start query
+    events = Event.query
 
-    # Format: {event_id: "pending"/"approved"/"rejected"}
-    user_requests = {req.event_id: req.status for req in user_join_requests}
+    # -----------------------
+    # 🔍 APPLY FILTERS
+    # -----------------------
+    if title:
+        events = events.filter(Event.title.ilike(f"%{title}%"))
 
+    if tag:
+        # If tag is Enum: Event.tags is EventTagEnum
+        events = events.filter(Event.tags.ilike(f"%{tag}%"))
+
+    if organizer:
+        events = events.join(User).filter(User.username.ilike(f"%{organizer}%"))
+
+    if date:
+        events = events.filter(Event.date == date)
+
+    if visibility:
+        events = events.filter(Event.visibility == visibility)
+
+    if location:
+        events = events.filter(Event.venue.ilike(f"%{location}%"))
+
+    if mode:
+        events = events.filter(Event.mode == mode)
+
+    # Sort events
+    events = events.order_by(Event.date.desc()).all()
+
+    # -----------------------
+    # 📌 USER'S JOIN REQUEST STATUS (FOR PRIVATE EVENTS)
+    # -----------------------
+    user_requests = {}
+    join_requests = JoinRequest.query.filter_by(user_id=current_user.id).all()
+    for req in join_requests:
+        user_requests[req.event_id] = req.status
+
+    # -----------------------
+    # 📌 RENDER PAGE
+    # -----------------------
     return render_template(
         "profile.html",
         events=events,
         user_requests=user_requests
-    ), 200
+    )
 
 
 # -------------------------------------
@@ -463,3 +506,36 @@ def view_join_requests(event_id):
 
     return render_template("join_requests.html", event=event, requests=requests)
 
+
+# -------------------------------------
+# MY EVENTS PAGE (Organizers & Admin)
+# -------------------------------------
+@events_blueprint.route('/my-events', methods=['GET', 'POST'])
+
+def my_events_page():
+
+    search_query = ""
+
+    # If form submitted
+    if request.method == "POST":
+        search_query = request.form.get("search", "").strip()
+
+        # Filter events by name or description
+        events = Event.query.filter(
+            Event.name.ilike(f"%{search_query}%")
+        ).all()
+
+        return render_template(
+            "profile.html",
+            events=events,
+            search_query=search_query
+        )
+
+    # Default: show all events
+    events = Event.query.all()
+
+    return render_template(
+        "profile.html",
+        events=events,
+        search_query=search_query
+    )
