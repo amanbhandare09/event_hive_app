@@ -1,122 +1,120 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Live Events | EventHive</title>
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(120deg, #0a0a0a, #003300);
-      color: #f0f0f0;
-      margin: 0;
-      padding: 0;
-    }
+{% extends "base.html" %}
 
-    header {
-      background-color: #111;
-      padding: 15px 40px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+{% block content %}
 
-    .logo {
-      font-size: 24px;
-      font-weight: bold;
-      color: #4CAF50;
-    }
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(120deg, #0a0a0a, #003300);
+    color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+  }
 
-    .event-container {
-      max-width: 800px;
-      margin: 40px auto;
-      background-color: #1a1a1a;
-      padding: 20px 30px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-    }
+  header {
+    background-color: #111;
+    padding: 15px 40px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 
-    .event-card {
-      border-left: 5px solid #4CAF50;
-      margin-bottom: 20px;
-      padding: 20px;
-      border-radius: 8px;
-      background: #222;
-    }
+  .logo {
+    font-size: 24px;
+    font-weight: bold;
+    color: #4CAF50;
+  }
 
-    .event-title {
-      font-size: 20px;
-      color: #4CAF50;
-      margin-bottom: 10px;
-    }
+  .event-container {
+    max-width: 800px;
+    margin: 40px auto;
+    background-color: #1a1a1a;
+    padding: 20px 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  }
 
-    .countdown {
-      color: #ffcc00;
-      font-weight: bold;
-      margin-top: 10px;
-    }
+  .event-card {
+    border-left: 5px solid #4CAF50;
+    margin-bottom: 20px;
+    padding: 20px;
+    border-radius: 8px;
+    background: #222;
+  }
 
-    .back-btn {
-      background-color: #4CAF50;
-      color: #fff;
-      padding: 10px 16px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 500;
-      transition: background-color 0.3s;
-    }
+  .event-title {
+    font-size: 20px;
+    color: #4CAF50;
+    margin-bottom: 10px;
+  }
 
-    .back-btn:hover {
-      background-color: #45a049;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <div class="logo">EventHive</div>
-    <a href="{{ url_for('main.profile') }}" class="back-btn">← Back to My Events</a>
-  </header>
+  .countdown {
+    color: #ffcc00;
+    font-weight: bold;
+    margin-top: 10px;
+  }
 
-  <div class="event-container">
-    <h2>🔴 Live Events</h2>
+  .back-btn {
+    background-color: #4CAF50;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.3s;
+  }
 
-    {% if events %}
-      {% for event in events %}
-        <div class="event-card">
-          <div class="event-title">{{ event.title }}</div>
-          <p>{{ event.description }}</p>
-          <p><strong>Venue:</strong> {{ event.venue }}</p>
-          <p><strong>Time:</strong> {{ event.starttime.strftime('%I:%M %p') }} - {{ event.endtime.strftime('%I:%M %p') }}</p>
-          <p class="countdown" id="countdown-{{ loop.index }}">Loading countdown...</p>
-          
-          <script>
-            const endTime{{ loop.index }} = new Date("{{ event.date }}T{{ event.endtime.strftime('%H:%M:%S') }}");
-            function updateCountdown{{ loop.index }}() {
-              const now = new Date();
-              const diff = endTime{{ loop.index }} - now;
-              const countdownEl = document.getElementById("countdown-{{ loop.index }}");
+  .back-btn:hover {
+    background-color: #45a049;
+  }
+</style>
 
-              if (diff <= 0) {
-                countdownEl.textContent = "Event Ended";
-                countdownEl.style.color = "red";
-                return;
-              }
 
-              const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-              const minutes = Math.floor((diff / (1000 * 60)) % 60);
-              const seconds = Math.floor((diff / 1000) % 60);
 
-              countdownEl.textContent = ` Ends in ${hours}h ${minutes}m ${seconds}s`;
+<div class="event-container">
+  <h2>🔴 Live Events</h2>
+
+  {% if events %}
+    {% for event in events %}
+      <div class="event-card">
+        <div class="event-title">{{ event.title }}</div>
+        <p>{{ event.description }}</p>
+        <p><strong>Venue:</strong> {{ event.venue }}</p>
+        <p><strong>Time:</strong> {{ event.starttime.strftime('%I:%M %p') }} - {{ event.endtime.strftime('%I:%M %p') }}</p>
+
+        <p class="countdown" id="countdown-{{ loop.index }}">Loading countdown...</p>
+
+        <script>
+          const endTime{{ loop.index }} = new Date("{{ event.date }}T{{ event.endtime.strftime('%H:%M:%S') }}");
+
+          function updateCountdown{{ loop.index }}() {
+            const now = new Date();
+            const diff = endTime{{ loop.index }} - now;
+            const countdownEl = document.getElementById("countdown-{{ loop.index }}");
+
+            if (diff <= 0) {
+              countdownEl.textContent = "Event Ended";
+              countdownEl.style.color = "red";
+              return;
             }
-            setInterval(updateCountdown{{ loop.index }}, 1000);
-            updateCountdown{{ loop.index }}();
-          </script>
-        </div>
-      {% endfor %}
-    {% else %}
-      <p>No live events right now.</p>
-    {% endif %}
-  </div>
-</body>
-</html>
+
+            const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const minutes = Math.floor((diff / (1000 * 60)) % 60);
+            const seconds = Math.floor((diff / 1000) % 60);
+
+            countdownEl.textContent = `Ends in ${hours}h ${minutes}m ${seconds}s`;
+          }
+
+          setInterval(updateCountdown{{ loop.index }}, 1000);
+          updateCountdown{{ loop.index }}();
+        </script>
+
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>No live events right now.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

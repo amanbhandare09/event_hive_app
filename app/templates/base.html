@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}EventHive{% endblock %}</title>
+
+  <!-- Common CSS -->
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(120deg, #0a0a0a, #003300);
+      color: #f0f0f0;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #111;
+      padding: 15px 40px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #4CAF50;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    /* Circular profile button */
+    .profile-circle {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background-color: #4CAF50;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #111;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      border: 2px solid #4CAF50;
+      transition: 0.3s;
+    }
+
+    .profile-circle:hover {
+      background-color: #45a049;
+    }
+
+    .create-event-btn {
+      background-color: #4CAF50;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background-color 0.3s;
+    }
+
+    .create-event-btn:hover {
+      background-color: #45a049;
+    }
+
+    .logo-link {
+    text-decoration: none;
+    color: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.logo-link:hover {
+    opacity: 0.8;
+}
+
+  </style>
+
+  {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+<header>
+<div class="logo">
+    <a href="{{ url_for('main.profile') }}" class="logo-link">
+        EventHive
+    </a>
+</div>
+
+
+  {% if current_user.is_authenticated %}
+  <div class="user-info">
+    <a href="{{ url_for('events.live_events') }}" class="create-event-btn">🔴 Live</a>
+    <a href="{{ url_for('events.create_event') }}" class="create-event-btn">+ Create Event</a>
+
+    <!-- Circular button → Go to user profile -->
+     <!-- need to change this to profile page -->
+    <a href="{{ url_for('auth.profile') }}" class="profile-circle"> 
+      {{ current_user.username[0].upper() }}
+    </a>
+  </div>
+  {% endif %}
+</header>
+
+<!-- MAIN CONTENT -->
+<div class="content">
+  {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

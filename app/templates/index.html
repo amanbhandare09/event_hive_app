@@ -1,69 +1,157 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome | EventHive</title>
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(120deg, #0a0a0a, #003300);
-      color: #f0f0f0;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      text-align: center;
-    }
+{% extends "base.html" %}
 
-    h1 {
-      font-size: 64px;
-      font-weight: 800;
-      color: #4CAF50;
-      margin-bottom: 20px;
-      text-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
-      letter-spacing: 2px;
-    }
+{% block title %}My Events | EventHive{% endblock %}
 
-    p {
-      font-size: 18px;
-      color: #ccc;
-      margin-bottom: 40px;
-    }
+{% block extra_css %}
+<style>
+  .event-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+  }
+  .event-card {
+    background-color: #1a1a1a;
+    border-left: 5px solid #4CAF50;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    transition: transform 0.2s;
+  }
+  .event-card:hover { transform: translateY(-3px); }
+  .event-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .event-meta {
+    color: #aaa;
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  .created-by-you {
+    background: #003300;
+    color: #4CAF50;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    display: inline-block;
+    margin-bottom: 10px;
+  }
+  .visibility-tag {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .visibility-tag.public { background-color: #2e7d32; color: #fff; }
+  .visibility-tag.private { background-color: #b71c1c; color: #fff; }
 
-    .login-btn {
-      background-color: #4CAF50;
-      color: #fff;
-      border: none;
-      padding: 14px 32px;
-      font-size: 18px;
-      border-radius: 8px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: background-color 0.3s, transform 0.2s;
-    }
+  .register-btn, .attendees-btn, .delete-btn, .update-btn {
+    display: inline-block;
+    margin-top: 10px;
+    margin-right: 10px;
+    padding: 10px 18px;
+    background-color: #4CAF50;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  .delete-btn { background-color: #d9534f; }
+  .delete-btn:hover { background-color: #c9302c; }
+</style>
+{% endblock %}
 
-    .login-btn:hover {
-      background-color: #45a049;
-      transform: translateY(-3px);
-    }
+{% block content %}
 
-    footer {
-      position: absolute;
-      bottom: 20px;
-      color: #777;
-      font-size: 14px;
-    }
-  </style>
-</head>
-<body>
-  <h1>EventHive</h1>
-  <p>Organize. Attend. Connect — Your world of events starts here.</p>
-  <a href="{{ url_for('auth.login') }}" class="login-btn">Login</a>
+<div class="event-container">
+  <h2>All Events</h2>
 
-  <footer>© 2025 EventHive. All rights reserved.</footer>
-</body>
-</html>
+  {% if events %}
+    {% for event in events %}
+      <div class="event-card">
+        
+        <div class="event-title">
+          {{ event.title }}
+          <span class="visibility-tag {{ event.visibility.value }}">
+            {{ event.visibility.value|capitalize }}
+          </span>
+        </div>
+
+        <div class="event-meta">
+          Description: {{ event.description }}<br>
+          Hosted by <strong>{{ event.creator.username }}</strong> |
+          Date: {{ event.date.strftime('%d %b %Y') }} |
+          Time: {{ event.starttime.strftime('%I:%M %p') }} -
+                {{ event.endtime.strftime('%I:%M %p') }} |
+          Location: {{ event.venue }} |
+          Tag: {{ event.tags.value }}
+        </div>
+
+        {% if event.creator.id == current_user.id %}
+          <div class="created-by-you">Created by you</div>
+
+          {% if event.visibility.value == 'private' %}
+            <a href="{{ url_for('events.view_join_requests', event_id=event.id) }}" class="attendees-btn">
+              View Requests
+            </a>
+          {% endif %}
+
+          <form action="{{ url_for('events.delete_event', event_id=event.id) }}" method="POST" style="display:inline;">
+            <button type="submit" class="delete-btn">Delete</button>
+          </form>
+
+          <a href="{{ url_for('events.update_event', event_id=event.id) }}" class="update-btn">Update</a>
+
+        {% else %}
+          {# PUBLIC & PRIVATE EVENT REGISTER LOGIC #}
+          {% if current_user in event.attendees and event.visibility.value == 'public' %}
+            <form action="{{ url_for('attendees.unregister_attendee', event_id=event.id) }}" method="POST">
+              <button class="delete-btn">Unregister</button>
+            </form>
+
+          {% else %}
+            {% if event.visibility.value == 'private' %}
+              {% if event.id in user_requests %}
+                {% set status = user_requests[event.id] %}
+                {% if status == "pending" %}
+                  <button class="register-btn" disabled>Request Pending</button>
+                {% elif status == "approved" %}
+                  <button class="register-btn" disabled>Approved</button>
+                {% elif status == "rejected" %}
+                  <button class="delete-btn" disabled>Rejected</button>
+                {% endif %}
+              {% else %}
+                <form action="{{ url_for('attendees.create_attendee') }}" method="POST">
+                  <input type="hidden" name="eventId" value="{{ event.id }}">
+                  <button class="register-btn">Send Request</button>
+                </form>
+              {% endif %}
+            {% else %}
+              <form action="{{ url_for('attendees.create_attendee') }}" method="POST">
+                <input type="hidden" name="eventId" value="{{ event.id }}">
+                <button class="register-btn">Register</button>
+              </form>
+            {% endif %}
+          {% endif %}
+        {% endif %}
+
+        <a href="{{ url_for('attendees.get_attendee', attendee_id=current_user.id, event_id=event.id) }}" class="attendees-btn">
+          View Attendees
+        </a>
+
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>No events found.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

@@ -63,6 +63,13 @@ def login_post():
     # Redirect to profile page
     return redirect(url_for('main.profile'))
 
+
+@auth_blueprint.route("/user_profile")
+@login_required
+def profile():
+    """User profile page - displays current user's information"""
+    return render_template('user_profile.html', user=current_user)
+
 @auth_blueprint.route("/logout")
 @login_required
 def logout():
