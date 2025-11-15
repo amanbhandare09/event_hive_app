@@ -218,13 +218,13 @@ def create_attendee():
         flash("You cannot register for your own event!", "danger")
         return redirect(url_for("main.profile"))
 
-    # Already attendee check
+    # Check if already registered (check both Attendee table AND many-to-many)
     existing_attendee = Attendee.query.filter_by(
         user_id=current_user.id,
         event_id=event_id
     ).first()
-
-    if existing_attendee:
+    
+    if existing_attendee or current_user in event.attendees:
         flash("You are already registered for this event!", "warning")
         return redirect(url_for("main.profile"))
 
@@ -267,7 +267,7 @@ def create_attendee():
     db.session.add(attendee)
     db.session.flush()  # Get attendee.id
 
-    # ✅ ADD THIS: Add user to the many-to-many relationship
+    # ✅ CRITICAL FIX: Add user to the many-to-many relationship
     if current_user not in event.attendees:
         event.attendees.append(current_user)
 
@@ -308,9 +308,8 @@ def create_attendee():
     db.session.commit()
 
     flash("Successfully registered for the event!", "success")
-    return redirect(
-        url_for("attendees.registration_success", attendee_id=attendee.id)
-    )
+    return redirect(url_for("main.profile"))
+
 
 @attendees_blueprint.route('/registration-success/<int:attendee_id>')
 @login_required
@@ -337,12 +336,36 @@ def registration_success(attendee_id):
 def unregister_attendee(event_id):
     event = Event.query.get_or_404(event_id)
 
+    # Check if user is registered
     if current_user not in event.attendees:
-        return jsonify({"message": "You are not registered"}), 400
+        flash("You are not registered for this event!", "warning")
+        return redirect(url_for("main.profile"))
 
+    # Remove from many-to-many relationship
     event.attendees.remove(current_user)
+    
+    # ✅ DELETE THE ATTENDEE RECORD (with QR code)
+    attendee = Attendee.query.filter_by(
+        user_id=current_user.id,
+        event_id=event_id
+    ).first()
+    
+    if attendee:
+        # Optional: Delete the QR code file from disk
+        if attendee.qr_code_path:
+            qr_file_path = os.path.join(
+                current_app.root_path, 
+                "static", 
+                attendee.qr_code_path
+            )
+            if os.path.exists(qr_file_path):
+                os.remove(qr_file_path)
+        
+        db.session.delete(attendee)
+    
     db.session.commit()
-
+    
+    flash("Successfully unregistered from the event!", "success")
     return redirect(url_for("main.profile"))
 
 

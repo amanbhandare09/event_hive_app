@@ -1,192 +1,204 @@
-<!-- no need of inheritance  -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Create Event | EventHive</title>
-  <style>
+{% extends "base.html" %}
+
+{% block title %}Create Event | EventHive{% endblock %}
+
+{% block extra_css %}
+<style>
     body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(120deg, #0a0a0a, #003300);
-      color: #f0f0f0;
-      margin: 0;
-      padding: 0;
-    }
-
-    header {
-      background-color: #111;
-      padding: 15px 40px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .logo {
-      font-size: 24px;
-      font-weight: bold;
-      color: #4CAF50;
+        background: linear-gradient(120deg, #0a0a0a, #003300);
+        color: #f0f0f0;
     }
 
     .form-container {
-      max-width: 600px;
-      margin: 40px auto;
-      background-color: #1a1a1a;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+        max-width: 600px;
+        margin: 40px auto;
+        background-color: #1a1a1a;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
     }
 
     h2 {
-      text-align: center;
-      color: #4CAF50;
-      margin-bottom: 25px;
+        text-align: center;
+        color: #4CAF50;
+        margin-bottom: 25px;
     }
 
     label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: 500;
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
     }
 
     input, textarea, select {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border: none;
-      border-radius: 6px;
-      background-color: #2a2a2a;
-      color: #fff;
-      font-size: 15px;
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: none;
+        border-radius: 6px;
+        background-color: #2a2a2a;
+        color: #fff;
+        font-size: 15px;
     }
 
     input:focus, textarea:focus, select:focus {
-      outline: 2px solid #4CAF50;
+        outline: 2px solid #4CAF50;
     }
 
     button {
-      background-color: #4CAF50;
-      color: white;
-      padding: 12px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      width: 100%;
-      font-size: 16px;
-      font-weight: 500;
-      transition: background-color 0.3s;
+        background-color: #4CAF50;
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        width: 100%;
+        font-size: 16px;
+        font-weight: 500;
+        transition: background-color 0.3s;
     }
 
     button:hover {
-      background-color: #45a049;
+        background-color: #45a049;
+    }
+
+    button:disabled {
+        background-color: #666;
+        cursor: not-allowed;
     }
 
     .message {
-      text-align: center;
-      margin-top: 15px;
-      font-size: 14px;
+        text-align: center;
+        margin-top: 15px;
+        font-size: 14px;
     }
-  </style>
-</head>
-<body>
-  <header>
-    <div class="logo">EventHive</div>
-    <!-- <a href="{{ url_for('main.profile') }}" style="color:#4CAF50; text-decoration:none; font-weight:500;">Back to Events</a> -->
-  </header>
+</style>
+{% endblock %}
 
-  <div class="form-container">
+{% block content %}
+
+<div class="form-container">
     <h2>Create a New Event</h2>
+
     <form id="createEventForm">
 
-      <label for="title">Event Title</label>
-      <input type="text" id="title" name="title" required>
+        <label for="title">Event Title</label>
+        <input type="text" id="title" name="title" required>
 
-      <label for="description">Description</label>
-      <textarea id="description" name="description" rows="4" required></textarea>
+        <label for="description">Description</label>
+        <textarea id="description" name="description" rows="4" required></textarea>
 
-      <label for="date">Date</label>
-      <input type="date" id="date" name="date" required>
+        <label for="date">Date</label>
+        <input type="date" id="date" name="date" required>
 
-      <label for="starttime">Start Time</label>
-      <input type="time" id="starttime" name="starttime" required>
+        <label for="starttime">Start Time</label>
+        <input type="time" id="starttime" name="starttime" required>
 
-      <label for="endtime">End Time</label>
-      <input type="time" id="endtime" name="endtime" required>
-  
+        <label for="endtime">End Time</label>
+        <input type="time" id="endtime" name="endtime" required>
 
-      <label for="mode">Mode</label>
-      <select id="mode" name="mode" required>
-        <option value="online">Online</option>
-        <option value="offline">Offline</option>
-      </select>
+        <label for="mode">Mode</label>
+        <select id="mode" name="mode" required>
+            <option value="online">Online</option>
+            <option value="offline">Offline</option>
+        </select>
 
-      <label for="venue">Venue</label>
-      <input type="text" id="venue" name="venue" required>
+        <label for="venue">Venue</label>
+        <input type="text" id="venue" name="venue" required>
 
-      <label for="capacity">Capacity</label>
-      <input type="number" id="capacity" name="capacity" min="1" value="100">
+        <label for="capacity">Capacity</label>
+        <input type="number" id="capacity" name="capacity" min="1" value="100">
 
-      
-      <label for="tags">Tags</label>
-      <select id="tags" name="tags" required>
-        <option value="Music">Music</option>
-        <option value="Sports">Sports</option>
-        <option value="Tech">Tech</option>
-        <option value="Art">Art</option>
-        <option value="Education">Education</option>
-        <option value="Networking">Networking</option>
-      </select>
-    
-      <label for="visibility">Visibility</label>
-      <select id="visibility" name="visibility" required>
-        <option value="public">Public</option>
-        <option value="private">Private</option>
-      </select>
+        <label for="tags">Tags</label>
+        <select id="tags" name="tags" required>
+            <option value="Music">Music</option>
+            <option value="Sports">Sports</option>
+            <option value="Tech">Tech</option>
+            <option value="Art">Art</option>
+            <option value="Education">Education</option>
+            <option value="Networking">Networking</option>
+        </select>
 
-      <button type="submit">Create Event</button>
+        <label for="visibility">Visibility</label>
+        <select id="visibility" name="visibility" required>
+            <option value="public">Public</option>
+            <option value="private">Private</option>
+        </select>
+
+        <button type="submit" id="submitBtn">Create Event</button>
     </form>
 
     <div class="message" id="message"></div>
-  </div>
+</div>
 
-  <script>
-    document.getElementById('createEventForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
+<script>
+document.getElementById('createEventForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
 
-      const data = {
+    const submitBtn = document.getElementById('submitBtn');
+    const messageEl = document.getElementById('message');
+    
+    // Disable button to prevent double submission
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating...';
+
+    const data = {
         title: document.getElementById('title').value,
         description: document.getElementById('description').value,
         date: document.getElementById('date').value,
-        starttime: document.getElementById('starttime').value,  // 🔥 Added
-        endtime: document.getElementById('endtime').value,      // 🔥 Added
+        starttime: document.getElementById('starttime').value,
+        endtime: document.getElementById('endtime').value,
         mode: document.getElementById('mode').value,
         venue: document.getElementById('venue').value,
         capacity: document.getElementById('capacity').value,
-        tags: document.getElementById('tags').value,            // 🔥 Added
+        tags: document.getElementById('tags').value,
         visibility: document.getElementById('visibility').value,
         organizer_id: {{ current_user.id }}
-      };
+    };
 
-      const response = await fetch("{{ url_for('events.create_event') }}", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
+    try {
+        const response = await fetch("{{ url_for('events.create_event') }}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
 
-      const result = await response.json();
-      const messageEl = document.getElementById('message');
-
-      if (response.ok) {
-        window.location.href= "{{url_for('main.profile')}}",
-        messageEl.style.color = "#4CAF50";
-        messageEl.textContent = "Event created successfully!";
-        document.getElementById('createEventForm').reset();
-      } else {
+        if (response.ok) {
+            // Check if response is JSON
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                const result = await response.json();
+                messageEl.style.color = "#4CAF50";
+                messageEl.textContent = result.message || "Event created successfully!";
+            }
+            
+            // Redirect after short delay
+            setTimeout(() => {
+                window.location.href = "{{ url_for('main.profile') }}";
+            }, 500);
+            
+        } else {
+            // Try to parse error message
+            try {
+                const result = await response.json();
+                messageEl.style.color = "red";
+                messageEl.textContent = "Failed: " + (result.message || "Error creating event");
+            } catch {
+                messageEl.style.color = "red";
+                messageEl.textContent = "Failed to create event. Please try again.";
+            }
+            
+            // Re-enable button
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Event';
+        }
+    } catch (error) {
         messageEl.style.color = "red";
-        messageEl.textContent = "Failed to create event: " + (result.message || "Error");
-      }
-    });
-  </script>
-</body>
-</html>
+        messageEl.textContent = "Network error. Please try again.";
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Event';
+    }
+});
+</script>
+
+{% endblock %}

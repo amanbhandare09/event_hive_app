@@ -98,6 +98,12 @@
   background-color: #c9302c;
 }
 
+.register-btn:disabled,
+.delete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 </style>
 {% endblock %}
 
@@ -138,18 +144,27 @@
                         <button type="submit" class="delete-btn">Delete</button>
                     </form>
 
-                    <a href="{{ url_for('events.update_event', event_id=event.id) }}" class="update-btn">Update</a>
+                    <a href="{{ url_for('events.load_update_event_page', event_id=event.id) }}" class="update-btn">Update</a>
 
                 {% else %}
-
-                    {% if current_user in event.attendees and event.visibility.value == 'public' %}
-                        <form action="{{ url_for('attendees.unregister_attendee', event_id=event.id) }}" method="POST" style="display:inline;">
-                            <button type="submit" class="delete-btn">Unregister</button>
-                        </form>
+                    {# Check if user is registered (either in attendees many-to-many OR has Attendee record) #}
+                    {% set is_registered = current_user in event.attendees %}
+                    {% set attendee_record = current_user.attendee_links|selectattr('event_id', 'equalto', event.id)|first %}
+                    
+                    {% if is_registered or attendee_record %}
+                        {# User is already registered #}
+                        {% if event.visibility.value == 'public' %}
+                            <form action="{{ url_for('attendees.unregister_attendee', event_id=event.id) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="delete-btn">Unregister</button>
+                            </form>
+                        {% else %}
+                            <button class="register-btn" disabled>Already Registered</button>
+                        {% endif %}
 
                     {% else %}
+                        {# User is NOT registered yet #}
                         {% if event.visibility.value == 'private' %}
-
+                            {# Private event - check join request status #}
                             {% if event.id in user_requests %}
                                 {% set status = user_requests[event.id] %}
 
@@ -171,6 +186,7 @@
                             {% endif %}
 
                         {% else %}
+                            {# Public event - direct registration #}
                             <form action="{{ url_for('attendees.create_attendee') }}" method="POST" style="display:inline;">
                                 <input type="hidden" name="eventId" value="{{ event.id }}">
                                 <button type="submit" class="register-btn">Register</button>
@@ -179,7 +195,7 @@
                     {% endif %}
                 {% endif %}
 
-                <a href="{{ url_for('attendees.get_attendee', attendee_id=current_user.id, event_id=event.id) }}" class="attendees-btn">
+                <a href="{{ url_for('attendees.get_attendee', event_id=event.id) }}" class="attendees-btn">
                     View Attendees
                 </a>
 
