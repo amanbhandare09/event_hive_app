@@ -6,7 +6,14 @@ from flask_login import current_user, login_required
 import qrcode
 import json
 from app import db
-from models.model import Event, EventMode, User, event_attendees, EventVisibility, Eventtag, JoinRequest , Attendee
+from models.model import Event, EventMode, User, event_attendees, EventVisibility, Eventtag, JoinRequest, Attendee
+from app.validators import (
+    EventCreateUpdateSchema, 
+    EventFilterSchema, 
+    AttendeeRegistrationSchema, 
+    MarkAttendanceSchema
+)
+from app.utils import validate_json, validate_form, validate_query
 
 main_blueprint = Blueprint("main", __name__)
 events_blueprint = Blueprint("events", __name__)
@@ -45,15 +52,8 @@ def user_profile():
 @main_blueprint.route("/profile", methods=["GET"])
 @login_required
 def profile():
-
-    # Read search filters from request
-    title = request.args.get("title", "").strip()
-    tag = request.args.get("tag", "").strip()
-    organizer = request.args.get("organizer", "").strip()
-    date = request.args.get("date", "").strip()
-    visibility = request.args.get("visibility", "").strip()
-    location = request.args.get("location", "").strip()
-    mode = request.args.get("mode", "").strip()
+    # Validate query parameters
+    filters = validate_query(EventFilterSchema)
 
     # Start query
     events = Event.query
@@ -61,27 +61,26 @@ def profile():
     # -----------------------
     # 🔍 APPLY FILTERS
     # -----------------------
-    if title:
-        events = events.filter(Event.title.ilike(f"%{title}%"))
+    if filters.title:
+        events = events.filter(Event.title.ilike(f"%{filters.title}%"))
 
-    if tag:
-        # If tag is Enum: Event.tags is EventTagEnum
-        events = events.filter(Event.tags.ilike(f"%{tag}%"))
+    if filters.tag:
+        events = events.filter(Event.tags.ilike(f"%{filters.tag}%"))
 
-    if organizer:
-        events = events.join(User).filter(User.username.ilike(f"%{organizer}%"))
+    if filters.organizer:
+        events = events.join(User).filter(User.username.ilike(f"%{filters.organizer}%"))
 
-    if date:
-        events = events.filter(Event.date == date)
+    if filters.date:
+        events = events.filter(Event.date == filters.date)
 
-    if visibility:
-        events = events.filter(Event.visibility == visibility)
+    if filters.visibility:
+        events = events.filter(Event.visibility == filters.visibility.value)
 
-    if location:
-        events = events.filter(Event.venue.ilike(f"%{location}%"))
+    if filters.location:
+        events = events.filter(Event.venue.ilike(f"%{filters.location}%"))
 
-    if mode:
-        events = events.filter(Event.mode == mode)
+    if filters.mode:
+        events = events.filter(Event.mode == filters.mode.value)
 
     # Sort events
     events = events.order_by(Event.date.desc()).all()
@@ -134,34 +133,24 @@ def create_event_page():
 @events_blueprint.route("/create", methods=["POST"])
 @login_required
 def create_event():
-
-    data = request.get_json() if request.is_json else request.form
-
-    # Safe date parsing
-    date_value = data.get("date")
-    if isinstance(date_value, str) and date_value:
-        date_value = datetime.strptime(date_value, "%Y-%m-%d").date()
-
-    start_value = data.get("starttime")
-    if isinstance(start_value, str) and start_value:
-        start_value = datetime.strptime(start_value, "%H:%M").time()
-
-    end_value = data.get("endtime")
-    if isinstance(end_value, str) and end_value:
-        end_value = datetime.strptime(end_value, "%H:%M").time()
+    # Validate request data
+    if request.is_json:
+        data = validate_json(EventCreateUpdateSchema)
+    else:
+        data = validate_form(EventCreateUpdateSchema)
 
     event = Event(
-        title=data.get("title"),
-        description=data.get("description"),
-        date=date_value,
-        starttime=start_value,
-        endtime=end_value,
-        mode=EventMode(data["mode"].lower()),
-        visibility=EventVisibility(data["visibility"].lower()),
-        venue=data.get("venue"),
-        capacity=int(data.get("capacity", 100)),
+        title=data.title,
+        description=data.description,
+        date=data.date,
+        starttime=data.starttime,
+        endtime=data.endtime,
+        mode=EventMode(data.mode.value),
+        visibility=EventVisibility(data.visibility.value),
+        venue=data.venue,
+        capacity=data.capacity,
         organizer_id=current_user.id,
-        tags=Eventtag(data["tags"]),
+        tags=Eventtag(data.tags.value),
     )
 
     db.session.add(event)
@@ -218,24 +207,18 @@ def update_event(event_id):
         return jsonify({"message": "Event not found"}), 404
 
     try:
-        data = request.get_json()
+        # Validate request data
+        data = validate_json(EventCreateUpdateSchema)
 
-        event.title = data.get("title")
-        event.description = data.get("description")
-
-        if isinstance(data.get("date"), str):
-            event.date = datetime.strptime(data.get("date"), "%Y-%m-%d").date()
-
-        if isinstance(data.get("starttime"), str):
-            event.starttime = datetime.strptime(data["starttime"], "%H:%M").time()
-
-        if isinstance(data.get("endtime"), str):
-            event.endtime = datetime.strptime(data["endtime"], "%H:%M").time()
-
-        event.mode = EventMode(data["mode"].lower())
-        event.venue = data.get("venue")
-        event.capacity = int(data.get("capacity"))
-        event.tags = Eventtag(data.get("tags"))
+        event.title = data.title
+        event.description = data.description
+        event.date = data.date
+        event.starttime = data.starttime
+        event.endtime = data.endtime
+        event.mode = EventMode(data.mode.value)
+        event.venue = data.venue
+        event.capacity = data.capacity
+        event.tags = Eventtag(data.tags.value)
 
         db.session.commit()
         return jsonify({"message": "Event updated successfully"}), 200
@@ -291,7 +274,6 @@ def test_attendance_page():
     return render_template('test_attendance.html')
 
 
-
 # -------------------------------------
 # PROCESS QR CODE SCAN (Mark attendance)
 # -------------------------------------
@@ -301,29 +283,20 @@ def mark_attendance():
     """
     Process scanned QR code data and mark attendance
     """
-    data = request.get_json()
-    if not data:
-        return jsonify({"error": "No data received"}), 400
-
-    attendee_id = data.get("attendee_id")
-    event_id = data.get("event_id")
-    user_id = data.get("user_id")
-    token = data.get("token")
-
-    if not all([attendee_id, event_id, user_id, token]):
-        return jsonify({"error": "Missing required fields"}), 400
+    # Validate request data
+    data = validate_json(MarkAttendanceSchema)
 
     # Verify event exists and current user is organizer
-    event = Event.query.get_or_404(event_id)
+    event = Event.query.get_or_404(data.event_id)
     if event.organizer_id != current_user.id:
         return jsonify({"error": "Unauthorized"}), 403
 
     # Find attendee record
     attendee = Attendee.query.filter_by(
-        id=attendee_id,
-        event_id=event_id,
-        user_id=user_id,
-        token=token
+        id=data.attendee_id,
+        event_id=data.event_id,
+        user_id=data.user_id,
+        token=data.token
     ).first()
 
     if not attendee:
@@ -355,9 +328,9 @@ def mark_attendance():
 @attendees_blueprint.route("/register", methods=["POST"])
 @login_required
 def create_attendee():
-    event_id = request.form.get("eventId")
-    if not event_id:
-        return "eventId missing", 400
+    # Validate registration data
+    data = validate_form(AttendeeRegistrationSchema)
+    event_id = data.eventId
 
     event = Event.query.get_or_404(event_id)
 
@@ -456,7 +429,7 @@ def create_attendee():
     db.session.commit()
 
     flash("Successfully registered for the event!", "success")
-    return redirect(url_for("attendees.registration_success"))
+    return redirect(url_for("attendees.registration_success", attendee_id=attendee.id))
 
 
 @attendees_blueprint.route('/registration-success/<int:attendee_id>')
@@ -616,9 +589,7 @@ def view_join_requests(event_id):
 # MY EVENTS PAGE (Organizers & Admin)
 # -------------------------------------
 @events_blueprint.route('/my-events', methods=['GET', 'POST'])
-
 def my_events_page():
-
     search_query = ""
 
     # If form submitted
