@@ -285,9 +285,45 @@
         color: #ffc107;
     }
 
+    .tab-header {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 1.5rem;
+        cursor: pointer;
+    }
+
+    .tab-item {
+        padding: 10px 20px;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(0,255,136,0.2);
+        color: #00ff88;
+        font-weight: bold;
+        transition: 0.3s;
+    }
+
+    .tab-item.active {
+        background: #00ff88;
+        color: #000;
+        border-color: #00ff88;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
     @media (max-width: 768px) {
         .events-grid {
             grid-template-columns: 1fr;
+        }
+        
+        .tab-header {
+            flex-direction: column;
+            gap: 10px;
         }
     }
 </style>
@@ -344,10 +380,19 @@
         </div>
     </div>
 
-    <!-- Registered Events Section -->
+    <!-- Events Section with Tabs -->
     <div class="profile-section">
-        <h2>My Registered Events ({{ user.attending_events|length }})</h2>
+        <div class="tab-header">
+            <div class="tab-item active" onclick="switchTab('registered')">
+                My Registered Events ({{ user.attending_events|length }})
+            </div>
+            <div class="tab-item" onclick="switchTab('created')">
+                My Created Events ({{ user.created_events|length }})
+            </div>
+        </div>
 
+        <!-- Registered Events Tab -->
+        <div id="registered-tab" class="tab-content active">
         {% if user.attending_events %}
             <div class="events-grid">
                 {% for event in user.attending_events %}
@@ -412,6 +457,77 @@
                 <a href="{{ url_for('main.profile') }}" class="btn btn-primary" style="margin-top: 1rem;">Browse Events</a>
             </div>
         {% endif %}
+        </div>
+
+        <!-- Created Events Tab -->
+        <div id="created-tab" class="tab-content">
+        {% if user.created_events %}
+            <div class="events-grid">
+                {% for event in user.created_events %}
+                    <div class="event-card">
+                        <h3>{{ event.title }}</h3>
+
+                        <div class="event-detail">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" 
+                                 viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25" />
+                            </svg>
+                            {{ event.date.strftime('%B %d, %Y') }}
+                        </div>
+
+                        {% if event.starttime %}
+                        <div class="event-detail">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" 
+                                 viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {{ event.starttime.strftime('%I:%M %p') }}
+                            {% if event.endtime %}- {{ event.endtime.strftime('%I:%M %p') }}{% endif %}
+                        </div>
+                        {% endif %}
+
+                        {% if event.venue %}
+                        <div class="event-detail">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" 
+                                 viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                            </svg>
+                            {{ event.venue }}
+                        </div>
+                        {% endif %}
+
+                        <span class="event-tag">{{ event.tags.value if event.tags else 'Event' }}</span>
+
+                        <div class="event-actions">
+                            <!-- change here -->
+                            <a href="{{ url_for('attendees.scan_qr_page', event_id=event.id) }}" 
+                               class="btn btn-secondary btn-small">Manage Event</a>
+
+                            <a href="{{ url_for('attendees.get_attendee', event_id=event.id) }}" 
+                               class="btn btn-primary btn-small">View Attendees</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-events">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" 
+                     viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" 
+                          d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25" />
+                </svg>
+                <p>You have not created any events yet 👀</p>
+                <a href="{{ url_for('events.create_event') }}" class="btn btn-primary" style="margin-top: 1rem;">
+                    Create Event
+                </a>
+            </div>
+        {% endif %}
+        </div>
     </div>
 
     <!-- Actions -->
@@ -439,6 +555,27 @@
 <script>
     let currentQRUrl = '';
 
+    function switchTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Remove active from all tab items
+        document.querySelectorAll('.tab-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        // Show selected tab
+        if (tabName === 'registered') {
+            document.getElementById('registered-tab').classList.add('active');
+            document.querySelectorAll('.tab-item')[0].classList.add('active');
+        } else if (tabName === 'created') {
+            document.getElementById('created-tab').classList.add('active');
+            document.querySelectorAll('.tab-item')[1].classList.add('active');
+        }
+    }
+
     function showQR(eventTitle, qrUrl) {
         currentQRUrl = qrUrl;
         document.getElementById('modalEventTitle').textContent = eventTitle;
@@ -461,11 +598,12 @@
 
     // Close modal when clicking outside
     window.onclick = function(event) {
-        const modal = document.getElementById('qrModal');
-        if (event.target == modal) {
-            closeQR();
-        }
+    const modal = document.getElementById('qrModal');
+    if (event.target === modal) {
+        closeQR();
     }
+};
+
 </script>
 
 {% endblock %}

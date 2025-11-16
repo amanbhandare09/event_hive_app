@@ -24,6 +24,24 @@ def index():
 # -------------------------------------
 # PROFILE PAGE
 # -------------------------------------
+@main_blueprint.route("/user/profile", methods=["GET"])
+@login_required
+def user_profile():
+    """
+    Display the user's personal profile with tabs showing:
+    - Events they registered for (attending_events)
+    - Events they created (created_events)
+    """
+    # Get current user with all necessary relationships
+    user = User.query.options(
+        db.joinedload(User.attending_events),
+        db.joinedload(User.created_events),
+        db.joinedload(User.attendee_links)
+    ).get(current_user.id)
+    
+    return render_template("user_profile.html", user=user)
+
+
 @main_blueprint.route("/profile", methods=["GET"])
 @login_required
 def profile():
@@ -244,6 +262,93 @@ def delete_event(event_id):
     return redirect(url_for("main.profile"))
 
 
+@attendees_blueprint.route('/event/<int:event_id>/scan', methods=["GET"])
+@login_required
+def scan_qr_page(event_id):
+    """
+    Render the QR code scanner page for marking attendance
+    Only event organizers can access this page
+    """
+    event = Event.query.get_or_404(event_id)
+    
+    # Only event organizer can scan QR codes
+    if event.organizer_id != current_user.id:
+        flash("You are not authorized to scan QR codes for this event!", "danger")
+        return redirect(url_for("main.profile"))
+    
+    return render_template('cam.html', event=event)
+
+
+# -------------------------------------
+# TEST ATTENDANCE ENDPOINT PAGE (For debugging)
+# -------------------------------------
+@attendees_blueprint.route('/test-attendance', methods=["GET"])
+@login_required
+def test_attendance_page():
+    """
+    Test page to manually test the mark_attendance endpoint
+    """
+    return render_template('test_attendance.html')
+
+
+
+# -------------------------------------
+# PROCESS QR CODE SCAN (Mark attendance)
+# -------------------------------------
+@attendees_blueprint.route('/mark-attendance', methods=["POST"])
+@login_required
+def mark_attendance():
+    """
+    Process scanned QR code data and mark attendance
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data received"}), 400
+
+    attendee_id = data.get("attendee_id")
+    event_id = data.get("event_id")
+    user_id = data.get("user_id")
+    token = data.get("token")
+
+    if not all([attendee_id, event_id, user_id, token]):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    # Verify event exists and current user is organizer
+    event = Event.query.get_or_404(event_id)
+    if event.organizer_id != current_user.id:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    # Find attendee record
+    attendee = Attendee.query.filter_by(
+        id=attendee_id,
+        event_id=event_id,
+        user_id=user_id,
+        token=token
+    ).first()
+
+    if not attendee:
+        return jsonify({"error": "Invalid QR code or attendee not found"}), 404
+
+    # Check if already marked present
+    if attendee.has_attended:
+        return jsonify({
+            "success": True,
+            "message": f"{attendee.user.username} was already marked as attended",
+            "already_marked": True
+        }), 200
+
+    # Mark attendance
+    attendee.has_attended = True
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "message": f"Attendance marked for {attendee.user.username}",
+        "attendee_name": attendee.user.username,
+        "event_name": event.title
+    }), 200
+
+
 # -------------------------------------
 # REGISTER FOR EVENT (PUBLIC/PRIVATE LOGIC)
 # -------------------------------------
@@ -351,7 +456,7 @@ def create_attendee():
     db.session.commit()
 
     flash("Successfully registered for the event!", "success")
-    return redirect(url_for("main.profile"))
+    return redirect(url_for("attendees.registration_success"))
 
 
 @attendees_blueprint.route('/registration-success/<int:attendee_id>')
