@@ -3,347 +3,724 @@
 
 {% block extra_css %}
 <style>
-
 /* --------------------------------------------------
    GENERAL CONTAINER
 -------------------------------------------------- */
+body {
+    background: linear-gradient(120deg, #0a0a0a, #003300);
+    font-family: 'Poppins', sans-serif;
+}
+
 .event-container {
-  max-width: 900px;
-  margin: 40px auto;
-  padding: 20px;
-  color: #fff;
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 20px;
+    color: #f0f0f0;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.page-header h2 {
+    color: #4CAF50;
+    font-size: 32px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.page-header p {
+    color: #ccc;
+    font-size: 16px;
 }
 
 /* --------------------------------------------------
-   DYNAMIC SEARCH BAR
+   IMPROVED SEARCH BAR - COMPACT
 -------------------------------------------------- */
 .dynamic-search-box {
-  background: #111;
-  padding: 20px;
-  border-radius: 12px;
-  margin-bottom: 25px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    background: rgba(17, 17, 17, 0.95);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.6);
+    border-left: 4px solid #4CAF50;
+    backdrop-filter: blur(10px);
 }
 
-#searchInput {
-  background: #1a1a1a;
-  color: #fff;
-  border: 1px solid #333;
+.search-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 15px;
 }
 
-/* Dropdown menu styling */
+.search-icon {
+    color: #4CAF50;
+    font-size: 20px;
+}
+
+.search-title {
+    color: #4CAF50;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.search-content {
+    display: block;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    align-items: center;
+}
+
+#searchInput,
+#dateInput {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.4);
+    color: #f0f0f0;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+#searchInput:focus,
+#dateInput:focus {
+    outline: none;
+    border-color: #4CAF50;
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
+#searchInput::placeholder {
+    color: #888;
+}
+
+/* Dropdown Button */
+.dropdown {
+    position: relative;
+}
+
+.dropdown-toggle,
+.search-btn {
+    background: #4CAF50 !important;
+    color: #111 !important;
+    border: none !important;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.dropdown-toggle:hover,
+.search-btn:hover {
+    background: #45a049 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3);
+}
+
+.dropdown-toggle::after {
+    margin-left: 5px;
+}
+
+/* Dropdown Menu */
 .dropdown-menu {
-  background: #1a1a1a;
-  border: 1px solid #333;
-  display: none; /* hidden until show class */
+    background: rgba(26, 26, 26, 0.98);
+    border: 2px solid rgba(76, 175, 80, 0.3);
+    border-radius: 10px;
+    padding: 8px;
+    margin-top: 8px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+    min-width: 200px;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+    padding: 0;
 }
 
 .dropdown-menu.show {
-  display: block;
+    max-height: 400px;
+    opacity: 1;
+    padding: 8px;
 }
 
 .dropdown-item {
-  color: #fff;
+    color: #f0f0f0;
+    padding: 10px 15px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    font-size: 14px;
+    cursor: pointer;
 }
 
 .dropdown-item:hover {
-  background: #333;
-  color: #4CAF50;
+    background: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+    transform: translateX(5px);
 }
 
-.dynamic-dropdown-menu {
-  max-height: 200px;
-  overflow-y: auto;
+.dropdown-item:active {
+    background: rgba(76, 175, 80, 0.3);
+}
+
+/* Dropdown Submenu for Visibility */
+.dropdown-submenu {
+    list-style: none;
+    padding-left: 15px;
+    margin-top: 5px;
+}
+
+.dropdown-submenu .dropdown-item {
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.visibility-option {
+    background: rgba(76, 175, 80, 0.05);
+    margin: 3px 0;
+}
+
+.visibility-option:hover {
+    background: rgba(76, 175, 80, 0.15);
 }
 
 /* --------------------------------------------------
-   TAG FILTER CHIPS
+   TAG FILTER CHIPS - COMPACT
 -------------------------------------------------- */
+#tagContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+    min-height: 30px;
+}
+
 .dynamic-tag {
-  background: #222;
-  border-radius: 20px;
-  padding: 6px 14px;
-  margin: 4px;
-  display: inline-flex;
-  align-items: center;
-  color: #4CAF50;
-  border: 1px solid #4CAF50;
-  font-size: 14px;
+    background: rgba(76, 175, 80, 0.15);
+    border-radius: 20px;
+    padding: 6px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #4CAF50;
+    border: 1px solid #4CAF50;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.3s;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.dynamic-tag:hover {
+    background: rgba(76, 175, 80, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
 }
 
 .dynamic-tag span {
-  cursor: pointer;
-  margin-left: 10px;
-  color: #ff4444;
-  font-weight: bold;
+    cursor: pointer;
+    color: #f44336;
+    font-weight: bold;
+    font-size: 16px;
+    line-height: 1;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+}
+
+.dynamic-tag span:hover {
+    background: rgba(244, 67, 54, 0.2);
+    transform: rotate(90deg);
+}
+
+.filter-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.active-filters-label {
+    color: #888;
+    font-size: 12px;
+}
+
+#clearFilters {
+    background: #dc3545;
+    border: none;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 13px;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+#clearFilters:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(220, 53, 69, 0.3);
 }
 
 /* --------------------------------------------------
    EVENT CARDS
 -------------------------------------------------- */
+.events-section {
+    margin-top: 30px;
+}
+
+.section-title {
+    color: #4CAF50;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #4CAF50;
+}
+
 .event-card {
-  background-color: #1a1a1a;
-  border-left: 5px solid #4CAF50;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
-  color: #eee;
+    background: rgba(17, 17, 17, 0.9);
+    border-left: 5px solid #4CAF50;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+    color: #f0f0f0;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+}
+
+.event-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
 }
 
 .event-title {
-  font-size: 22px;
-  margin-bottom: 10px;
-  color: #4CAF50;
-  font-weight: bold;
+    font-size: 22px;
+    margin-bottom: 12px;
+    color: #4CAF50;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .event-meta {
-  color: #ccc;
-  line-height: 1.5;
-  margin-bottom: 10px;
+    color: #ccc;
+    line-height: 1.8;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.event-meta strong {
+    color: #4CAF50;
 }
 
 .visibility-tag {
-  font-size: 13px;
-  padding: 4px 10px;
-  border-radius: 15px;
-  margin-left: 10px;
-  color: #fff;
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    color: #fff;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .visibility-tag.public {
-  background: #2e7d32;
+    background: #2e7d32;
 }
 
 .visibility-tag.private {
-  background: #c62828;
+    background: #c62828;
 }
 
 /* Buttons */
+.event-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
 .delete-btn,
 .update-btn,
 .register-btn,
 .attendees-btn {
-  display: inline-block;
-  padding: 6px 14px;
-  border-radius: 8px;
-  margin: 6px 6px 0 0;
-  text-decoration: none;
-  font-size: 14px;
-  cursor: pointer;
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s;
 }
 
 .delete-btn {
-  background: #b71c1c;
-  border: none;
-  color: #fff;
+    background: #dc3545;
+    color: #fff;
 }
-.delete-btn:hover { background: #d32f2f; }
+.delete-btn:hover { 
+    background: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+}
 
 .update-btn {
-  background: #1e88e5;
-  color: #fff;
+    background: #2196F3;
+    color: #fff;
 }
-.update-btn:hover { background: #2196f3; }
+.update-btn:hover { 
+    background: #1976D2;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+}
 
 .register-btn {
-  background: #4CAF50;
-  color: #fff;
-  border: none;
+    background: #4CAF50;
+    color: #fff;
 }
-.register-btn:hover { background: #66bb6a; }
-
-.register-btn:disabled,
-.delete-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.register-btn:hover { 
+    background: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
 }
 
 .attendees-btn {
-  background: #03b358;
-  color: #fff;
+    background: #00897B;
+    color: #fff;
 }
-.attendees-btn:hover { background: #24aa6c; }
+.attendees-btn:hover { 
+    background: #00796B;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 137, 123, 0.4);
+}
+
+.register-btn:disabled,
+.delete-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.register-btn:disabled:hover,
+.delete-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
 
 .created-by-you {
-  color: #4caf74;
-  font-weight: bold;
-  margin: 5px 0;
+    color: #4CAF50;
+    font-weight: 600;
+    margin: 10px 0;
+    padding: 8px 12px;
+    background: rgba(76, 175, 80, 0.15);
+    border-radius: 6px;
+    display: inline-block;
+    font-size: 13px;
+    border: 1px solid #4CAF50;
 }
 
+.no-events {
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+}
+
+.no-events-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.3;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .event-container {
+        padding: 15px;
+        margin: 20px auto;
+    }
+
+    .dynamic-search-box {
+        padding: 20px;
+    }
+
+    .input-group {
+        flex-direction: column;
+    }
+
+    #searchInput,
+    #dateInput {
+        width: 100%;
+    }
+
+    .dropdown-toggle {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .event-title {
+        font-size: 18px;
+    }
+
+    .event-actions {
+        flex-direction: column;
+    }
+
+    .event-actions > * {
+        width: 100%;
+        text-align: center;
+    }
+}
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="event-container">
 
-    <!-- 🔍 Dynamic Search Bar -->
+    <!-- Page Header -->
+    <div class="page-header">
+        <h2>🎉 Discover Events</h2>
+        <p>Find and register for amazing events in your area</p>
+    </div>
+
+    <!-- 🔍 Search Bar -->
     <form id="searchForm" method="GET">
         <div class="dynamic-search-box">
-            <div class="input-group mb-3">
-
-                <input id="searchInput"
-                       type="text"
-                       class="form-control"
-                       placeholder="Enter title..."
-                       style="background:#1a1a1a;color:#fff;border:1px solid #333;">
-
-                <!-- Date Picker (hidden by default) -->
-                <input id="dateInput"
-                       type="date"
-                       class="form-control"
-                       placeholder="Select date..."
-                       style="background:#1a1a1a;color:#fff;border:1px solid #333;display:none;">
-
-                <!-- WORKING BOOTSTRAP DROPDOWN -->
-                <div class="dropdown">
-                    <button class="btn btn-outline-success dropdown-toggle"
-                            type="button"
-                            id="filtersDropdown"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false"
-                            style="background:#4CAF50;color:#fff;border-color:#4CAF50;">
-                        Filters
-                    </button>
-
-                    <ul class="dropdown-menu dynamic-dropdown-menu" aria-labelledby="filtersDropdown">
-                        <li><a class="dropdown-item filter-option" data-filter="title">Title</a></li>
-                        <li><a class="dropdown-item filter-option" data-filter="organizer">Organizer</a></li>
-                        <li><a class="dropdown-item filter-option" data-filter="tag">Tag</a></li>
-                        <li><a class="dropdown-item filter-option" data-filter="location">Location</a></li>
-                        <li><a class="dropdown-item filter-option" data-filter="mode">Mode</a></li>
-                        <li><a class="dropdown-item filter-option" data-filter="date">Date</a></li>
-                        <li><a class="dropdown-item filter-option" data-filter="visibility">Visibility</a></li>
-                    </ul>
-                </div>
+            <div class="search-header">
+                <span class="search-icon">🔍</span>
+                <h3 class="search-title">Search & Filter Events</h3>
             </div>
 
-            <!-- Dynamic Tags -->
-            <div id="tagContainer"></div>
-            
-            <!-- Clear All Button -->
-            <div style="margin-top: 15px;">
-                <button type="button" id="clearFilters" class="btn btn-danger" style="background:#b71c1c;border:none;padding:8px 20px;">
-                    Clear All Filters
-                </button>
+            <div class="search-content" id="searchContent">
+                <div class="input-group">
+                    <input id="searchInput"
+                           type="text"
+                           class="form-control"
+                           placeholder="Enter title...">
+
+                    <!-- Date Picker (hidden by default) -->
+                    <input id="dateInput"
+                           type="date"
+                           class="form-control"
+                           style="display:none;">
+
+                    <!-- Search Button -->
+                    <button type="button" id="searchButton" class="btn search-btn">
+                        🔍 Search
+                    </button>
+
+                    <!-- WORKING BOOTSTRAP DROPDOWN -->
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle"
+                                type="button"
+                                id="filtersDropdown"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                            📋 Filters
+                        </button>
+
+                        <ul class="dropdown-menu" aria-labelledby="filtersDropdown">
+                            <li><a class="dropdown-item filter-option" data-filter="title">📝 Title</a></li>
+                            <li><a class="dropdown-item filter-option" data-filter="organizer">👤 Organizer</a></li>
+                            <li><a class="dropdown-item filter-option" data-filter="tag">🏷️ Tag</a></li>
+                            <li><a class="dropdown-item filter-option" data-filter="location">📍 Location</a></li>
+                            <li><a class="dropdown-item filter-option" data-filter="mode">💻 Mode</a></li>
+                            <li><a class="dropdown-item filter-option" data-filter="date">📅 Date</a></li>
+                            <li>
+                                <a class="dropdown-item filter-option" data-filter="visibility">👁️ Visibility</a>
+                                <ul class="dropdown-submenu">
+                                    <li><a class="dropdown-item visibility-option" data-value="public">🌍 Public</a></li>
+                                    <li><a class="dropdown-item visibility-option" data-value="private">🔒 Private</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Dynamic Tags -->
+                <div id="tagContainer"></div>
+                
+                <!-- Filter Controls -->
+                <div class="filter-controls">
+                    <span class="active-filters-label" id="filterCount">No filters applied</span>
+                    <button type="button" id="clearFilters" class="btn">
+                        🗑️ Clear All
+                    </button>
+                </div>
             </div>
         </div>
     </form>
 
-    <h2>All Events</h2>
+    <!-- Events Section -->
+    <div class="events-section">
+        <h2 class="section-title">All Events</h2>
 
-    {% if events %}
-        {% for event in events %}
-        <div class="event-card">
+        {% if events %}
+            {% for event in events %}
+            <div class="event-card">
 
-            <div class="event-title">
-                {{ event.title }}
-                <span class="visibility-tag {{ 'private' if event.visibility.value=='private' else 'public' }}">
-                    {{ event.visibility.value|capitalize }}
-                </span>
-            </div>
+                <div class="event-title">
+                    {{ event.title }}
+                    <span class="visibility-tag {{ 'private' if event.visibility.value=='private' else 'public' }}">
+                        {{ event.visibility.value }}
+                    </span>
+                </div>
 
-            <div class="event-meta">
-                Description: {{ event.description }}<br>
-                Hosted by <strong>{{ event.creator.username }}</strong> |
-                Date: {{ event.date.strftime('%d %b %Y') }} |
-                Time: {{ event.starttime.strftime('%I:%M %p') }} - {{ event.endtime.strftime('%I:%M %p') }} |
-                Location: {{ event.venue }} |
-                Tag: {{ event.tags.value }} |
-                Mode: {{ event.mode }}
-            </div>
+                <div class="event-meta">
+                    <strong>Description:</strong> {{ event.description }}<br>
+                    <strong>Hosted by:</strong> {{ event.creator.username }} |
+                    <strong>Date:</strong> {{ event.date.strftime('%d %b %Y') }} |
+                    <strong>Time:</strong> {{ event.starttime.strftime('%I:%M %p') }} - {{ event.endtime.strftime('%I:%M %p') }}<br>
+                    <strong>Location:</strong> {{ event.venue }} |
+                    <strong>Tag:</strong> {{ event.tags.value }} |
+                    <strong>Mode:</strong> {{ event.mode }}
+                </div>
 
-            {% if event.creator.id == current_user.id %}
-                <div class="created-by-you">Created by you</div>
-
-                {% if event.visibility.value == 'private' %}
-                    <a href="{{ url_for('events.view_join_requests', event_id=event.id) }}"
-                       class="attendees-btn">View Requests</a>
+                {% if event.creator.id == current_user.id %}
+                    <div class="created-by-you">✨ Created by you</div>
                 {% endif %}
 
-                <form action="{{ url_for('events.delete_event', event_id=event.id) }}"
-                      method="POST"
-                      style="display:inline;">
-                    <button type="submit" class="delete-btn">Delete</button>
-                </form>
+                <div class="event-actions">
+                    {% if event.creator.id == current_user.id %}
+                        {% if event.visibility.value == 'private' %}
+                            <a href="{{ url_for('events.view_join_requests', event_id=event.id) }}"
+                               class="attendees-btn">View Requests</a>
+                        {% endif %}
 
-                <a href="{{ url_for('events.load_update_event_page', event_id=event.id) }}"
-                   class="update-btn">Update</a>
-
-            {% else %}
-                {% set is_registered = current_user in event.attendees %}
-                {% set attendee_record = current_user.attendee_links|selectattr('event_id','equalto',event.id)|first %}
-
-                {% if is_registered or attendee_record %}
-                    {% if event.visibility.value == 'public' %}
-                        <form action="{{ url_for('attendees.unregister_attendee', event_id=event.id) }}"
+                        <form action="{{ url_for('events.delete_event', event_id=event.id) }}"
                               method="POST"
                               style="display:inline;">
-                            <button type="submit" class="delete-btn">Unregister</button>
+                            <button type="submit" class="delete-btn">Delete</button>
                         </form>
+
+                        <a href="{{ url_for('events.load_update_event_page', event_id=event.id) }}"
+                           class="update-btn">Update</a>
+
                     {% else %}
-                        <button class="register-btn" disabled>Already Registered</button>
-                    {% endif %}
-                {% else %}
-                    {% if event.visibility.value == 'private' %}
-                        {% if event.id in user_requests %}
-                            {% set status = user_requests[event.id] %}
-                            {% if status == "pending" %}
-                                <button class="register-btn" disabled>Request Pending</button>
-                            {% elif status == "approved" %}
-                                <button class="register-btn" disabled>Approved</button>
-                            {% elif status == "rejected" %}
-                                <button class="delete-btn" disabled>Rejected</button>
+                        {% set is_registered = current_user in event.attendees %}
+                        {% set attendee_record = current_user.attendee_links|selectattr('event_id','equalto',event.id)|first %}
+
+                        {% if is_registered or attendee_record %}
+                            {% if event.visibility.value == 'public' %}
+                                <form action="{{ url_for('attendees.unregister_attendee', event_id=event.id) }}"
+                                      method="POST"
+                                      style="display:inline;">
+                                    <button type="submit" class="delete-btn">Unregister</button>
+                                </form>
+                            {% else %}
+                                <button class="register-btn" disabled>Already Registered</button>
                             {% endif %}
                         {% else %}
-                            <form action="{{ url_for('attendees.create_attendee') }}"
-                                  method="POST"
-                                  style="display:inline;">
-                                <input type="hidden" name="eventId" value="{{ event.id }}">
-                                <button type="submit" class="register-btn">Send Request</button>
-                            </form>
+                            {% if event.visibility.value == 'private' %}
+                                {% if event.id in user_requests %}
+                                    {% set status = user_requests[event.id] %}
+                                    {% if status == "pending" %}
+                                        <button class="register-btn" disabled>Request Pending</button>
+                                    {% elif status == "approved" %}
+                                        <button class="register-btn" disabled>Approved</button>
+                                    {% elif status == "rejected" %}
+                                        <button class="delete-btn" disabled>Rejected</button>
+                                    {% endif %}
+                                {% else %}
+                                    <form action="{{ url_for('attendees.create_attendee') }}"
+                                          method="POST"
+                                          style="display:inline;">
+                                        <input type="hidden" name="eventId" value="{{ event.id }}">
+                                        <button type="submit" class="register-btn">Send Request</button>
+                                    </form>
+                                {% endif %}
+                            {% else %}
+                                <form action="{{ url_for('attendees.create_attendee') }}"
+                                      method="POST"
+                                      style="display:inline;">
+                                    <input type="hidden" name="eventId" value="{{ event.id }}">
+                                    <button type="submit" class="register-btn">Register</button>
+                                </form>
+                            {% endif %}
                         {% endif %}
-                    {% else %}
-                        <form action="{{ url_for('attendees.create_attendee') }}"
-                              method="POST"
-                              style="display:inline;">
-                            <input type="hidden" name="eventId" value="{{ event.id }}">
-                            <button type="submit" class="register-btn">Register</button>
-                        </form>
                     {% endif %}
-                {% endif %}
-            {% endif %}
 
-            <a href="{{ url_for('attendees.get_attendee', event_id=event.id) }}"
-               class="attendees-btn">View Attendees</a>
+                    <a href="{{ url_for('attendees.get_attendee', event_id=event.id) }}"
+                       class="attendees-btn">View Attendees</a>
+                </div>
 
-        </div>
-        {% endfor %}
-    {% else %}
-        <p>No events found.</p>
-    {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-events">
+                <div class="no-events-icon">📭</div>
+                <p>No events found matching your filters.</p>
+            </div>
+        {% endif %}
+    </div>
 </div>
 
 <!-- JavaScript -->
 <script>
-let activeFilter = "title"; // Set title as default filter
+let activeFilter = "title";
 const searchForm = document.getElementById("searchForm");
 const searchInput = document.getElementById("searchInput");
 const dateInput = document.getElementById("dateInput");
-const appliedFilters = new Map(); // Track applied filters: Map<filterType, Set<values>>
+const appliedFilters = new Map();
 
-// Initialize filter tracking
 ['title', 'organizer', 'tag', 'location', 'mode', 'date', 'visibility'].forEach(filterType => {
     appliedFilters.set(filterType, new Set());
 });
 
-// When clicking a dropdown filter
+function updateFilterCount() {
+    let totalFilters = 0;
+    appliedFilters.forEach(values => {
+        totalFilters += values.size;
+    });
+    
+    const filterCount = document.getElementById('filterCount');
+    if (totalFilters === 0) {
+        filterCount.textContent = 'No filters applied';
+    } else {
+        filterCount.textContent = `${totalFilters} filter${totalFilters > 1 ? 's' : ''} applied`;
+    }
+}
+
 document.querySelectorAll(".filter-option").forEach(option => {
-    option.addEventListener("click", () => {
+    option.addEventListener("click", (e) => {
+        // Don't process visibility filter here - it has submenu
+        if (option.dataset.filter === "visibility") {
+            e.stopPropagation();
+            return;
+        }
+        
         activeFilter = option.dataset.filter;
         
-        // Show/hide appropriate input based on filter type
         if (activeFilter === "date") {
             searchInput.style.display = "none";
             dateInput.style.display = "block";
@@ -357,15 +734,28 @@ document.querySelectorAll(".filter-option").forEach(option => {
     });
 });
 
-// Add tag on Enter for text input
+// Handle visibility submenu options
+document.querySelectorAll(".visibility-option").forEach(option => {
+    option.addEventListener("click", (e) => {
+        e.preventDefault();
+        const value = option.dataset.value;
+        
+        const filterValues = appliedFilters.get("visibility");
+        if (filterValues.has(value)) {
+            alert(`Filter "visibility: ${value}" is already applied.`);
+            return;
+        }
+        
+        addTag("visibility", value);
+    });
+});
+
 searchInput.addEventListener("keydown", function (e) {
     if (e.key === "Enter" && activeFilter && this.value.trim() !== "") {
         e.preventDefault();
-        
         const value = this.value.trim();
-        
-        // Check if this exact filter value is already applied
         const filterValues = appliedFilters.get(activeFilter);
+        
         if (filterValues.has(value)) {
             alert(`Filter "${activeFilter}: ${value}" is already applied.`);
             return;
@@ -373,16 +763,29 @@ searchInput.addEventListener("keydown", function (e) {
         
         addTag(activeFilter, value);
         this.value = "";
-        // Keep the active filter selected for easy adding of more filters
     }
 });
 
-// Add tag on date selection
+// Search button click handler
+document.getElementById("searchButton").addEventListener("click", function() {
+    if (activeFilter && searchInput.value.trim() !== "" && searchInput.style.display !== "none") {
+        const value = searchInput.value.trim();
+        const filterValues = appliedFilters.get(activeFilter);
+        
+        if (filterValues.has(value)) {
+            alert(`Filter "${activeFilter}: ${value}" is already applied.`);
+            return;
+        }
+        
+        addTag(activeFilter, value);
+        searchInput.value = "";
+    }
+});
+
 dateInput.addEventListener("change", function (e) {
     const value = this.value;
     
     if (value) {
-        // Check if this exact filter value is already applied
         const filterValues = appliedFilters.get("date");
         if (filterValues.has(value)) {
             alert(`Filter "date: ${value}" is already applied.`);
@@ -397,21 +800,18 @@ dateInput.addEventListener("change", function (e) {
 function addTag(type, value) {
     const tagContainer = document.getElementById("tagContainer");
     
-    // Format date display nicely
     let displayValue = value;
     if (type === "date") {
         const dateObj = new Date(value);
         displayValue = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     }
     
-    // Create chip element
     const chip = document.createElement("div");
     chip.className = "dynamic-tag";
     chip.textContent = `${type}: ${displayValue}`;
     chip.dataset.filterType = type;
     chip.dataset.filterValue = value;
 
-    // Create hidden input for form submission
     const hiddenInput = document.createElement("input");
     hiddenInput.type = "hidden";
     hiddenInput.name = type;
@@ -420,77 +820,62 @@ function addTag(type, value) {
     hiddenInput.dataset.filterValue = value;
     searchForm.appendChild(hiddenInput);
 
-    // Create remove button
     const removeBtn = document.createElement("span");
     removeBtn.innerHTML = "&times;";
     removeBtn.onclick = () => {
         chip.remove();
         hiddenInput.remove();
-        
-        // Remove this specific value from tracking
         const filterValues = appliedFilters.get(type);
         filterValues.delete(value);
-        
-        applyFilters(); // Reapply filters after removal
+        updateFilterCount();
+        applyFilters();
     };
 
     chip.appendChild(removeBtn);
     tagContainer.appendChild(chip);
-    
-    // Track applied filter value
     appliedFilters.get(type).add(value);
-    
-    // Auto-submit to show results immediately
+    updateFilterCount();
     applyFilters();
 }
 
 function applyFilters() {
-    // Submit the form to apply current filters
     searchForm.submit();
 }
 
-// Clear all filters button
 document.getElementById("clearFilters").addEventListener("click", () => {
-    // Remove all chips and hidden inputs
     document.getElementById("tagContainer").innerHTML = "";
     const hiddenInputs = searchForm.querySelectorAll('input[type="hidden"]');
     hiddenInputs.forEach(input => input.remove());
     
-    // Clear all tracked filters
     appliedFilters.forEach((values, key) => {
         values.clear();
     });
     
-    // Reload page without filters
+    updateFilterCount();
     window.location.href = window.location.pathname;
 });
 
-// Restore active filters on page load (if any exist in URL)
 window.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const tagContainer = document.getElementById("tagContainer");
     
-    // Check each possible filter type
     ['title', 'organizer', 'tag', 'location', 'mode', 'date', 'visibility'].forEach(filterType => {
-        const values = urlParams.getAll(filterType); // Get all values for this filter type
+        const values = urlParams.getAll(filterType);
         
         values.forEach(value => {
             if (value) {
-                // Format date display nicely
                 let displayValue = value;
                 if (filterType === "date") {
                     const dateObj = new Date(value);
                     displayValue = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                 }
                 
-                // Recreate the chip without submitting
                 const chip = document.createElement("div");
                 chip.className = "dynamic-tag";
                 chip.textContent = `${filterType}: ${displayValue}`;
                 chip.dataset.filterType = filterType;
                 chip.dataset.filterValue = value;
 
-                // Create hidden input to persist filter
                 const hiddenInput = document.createElement("input");
                 hiddenInput.type = "hidden";
                 hiddenInput.name = filterType;
@@ -504,22 +889,19 @@ window.addEventListener('DOMContentLoaded', () => {
                 removeBtn.onclick = () => {
                     chip.remove();
                     hiddenInput.remove();
-                    
-                    // Remove this specific value from tracking
                     const filterValues = appliedFilters.get(filterType);
                     filterValues.delete(value);
                     
-                    // Rebuild URL without this filter
                     const allValues = urlParams.getAll(filterType);
                     urlParams.delete(filterType);
                     
-                    // Re-add all values except the one being removed
                     allValues.forEach(v => {
                         if (v !== value) {
                             urlParams.append(filterType, v);
                         }
                     });
                     
+                    updateFilterCount();
                     window.location.search = urlParams.toString();
                 };
 
@@ -529,6 +911,8 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+    
+    updateFilterCount();
 });
 </script>
 
