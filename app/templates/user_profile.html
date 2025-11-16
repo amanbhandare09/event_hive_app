@@ -5,18 +5,21 @@
 {% block extra_css %}
 <style>
     body {
-        background: linear-gradient(135deg, #0d0d0d, #064420);
+        background: linear-gradient(120deg, #0a0a0a, #003300);
+        font-family: 'Poppins', sans-serif;
     }
 
     .profile-container {
-        background: rgba(0, 0, 0, 0.8);
-        padding: 2rem;
-        border-radius: 12px;
-        box-shadow: 0 0 20px rgba(0, 255, 100, 0.2);
+        background: rgba(17, 17, 17, 0.9);
+        padding: 2.5rem;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+        border-left: 5px solid #4CAF50;
+        backdrop-filter: blur(10px);
         width: 100%;
         max-width: 1200px;
         margin: 40px auto;
-        color: #fff;
+        color: #f0f0f0;
     }
 
     .profile-header {
@@ -28,19 +31,22 @@
         width: 120px;
         height: 120px;
         border-radius: 50%;
-        background: #00ff88;
-        color: #000;
+        background: #4CAF50;
+        color: #111;
         display: flex;
         justify-content: center;
         align-items: center;
         font-size: 48px;
         font-weight: bold;
         margin: 0 auto 1rem;
+        border: 3px solid #4CAF50;
     }
 
     h1 {
-        color: #00ff88;
+        color: #4CAF50;
         margin-bottom: 5px;
+        font-size: 32px;
+        font-weight: 600;
     }
 
     .profile-section {
@@ -48,10 +54,12 @@
     }
 
     .profile-section h2 {
-        color: #00ff88;
-        border-bottom: 1px solid #00ff88;
+        color: #4CAF50;
+        border-bottom: 2px solid #4CAF50;
         padding-bottom: 0.5rem;
         margin-bottom: 1rem;
+        font-size: 22px;
+        font-weight: 600;
     }
 
     .info-grid {
@@ -61,20 +69,25 @@
     }
 
     .info-item {
-        background: rgba(255,255,255,0.05);
-        padding: 1rem;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 1.2rem;
         border-radius: 8px;
+        border: 1px solid rgba(76, 175, 80, 0.2);
     }
 
     .info-label {
-        font-size: 12px;
-        opacity: 0.6;
+        font-size: 13px;
+        color: #4CAF50;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .info-value {
         margin-top: 5px;
         font-size: 16px;
-        font-weight: bold;
+        font-weight: 600;
+        color: #f0f0f0;
     }
 
     .action-buttons {
@@ -88,29 +101,35 @@
         padding: 12px 25px;
         border-radius: 8px;
         text-decoration: none;
-        font-weight: bold;
+        font-weight: 500;
         font-size: 15px;
         display: inline-block;
         border: none;
         cursor: pointer;
+        transition: all 0.3s;
     }
 
     .btn-primary {
-        background: #00ff88;
-        color: #000;
+        background: #4CAF50;
+        color: #111;
     }
 
-    .btn-primary:hover { background: #00cc6a; }
+    .btn-primary:hover { 
+        background: #45a049;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+    }
 
     .btn-secondary {
         background: transparent;
-        border: 2px solid #00ff88;
-        color: #00ff88;
+        border: 2px solid #4CAF50;
+        color: #4CAF50;
     }
 
     .btn-secondary:hover {
-        background: #00ff88;
-        color: #000;
+        background: #4CAF50;
+        color: #111;
+        transform: translateY(-2px);
     }
 
     .btn-logout {
@@ -118,7 +137,10 @@
         color: #fff;
     }
 
-    .btn-logout:hover { background: #b52a36; }
+    .btn-logout:hover { 
+        background: #b52a36;
+        transform: translateY(-2px);
+    }
 
     /* Flash messages */
     .flash-message {
@@ -128,18 +150,21 @@
     }
 
     .flash-success {
-        background: #004d2b;
-        border-left: 4px solid #00ff88;
+        background: rgba(76, 175, 80, 0.2);
+        border-left: 4px solid #4CAF50;
+        color: #4CAF50;
     }
 
     .flash-error {
-        background: #4d0007;
-        border-left: 4px solid #ff4d4d;
+        background: rgba(244, 67, 54, 0.2);
+        border-left: 4px solid #f44336;
+        color: #f44336;
     }
 
     .flash-info {
-        background: #003344;
-        border-left: 4px solid #00e1ff;
+        background: rgba(33, 150, 243, 0.2);
+        border-left: 4px solid #2196F3;
+        color: #2196F3;
     }
 
     /* Events Grid */
@@ -151,23 +176,24 @@
     }
 
     .event-card {
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(0, 0, 0, 0.3);
         border-radius: 10px;
         padding: 1.5rem;
-        border: 1px solid rgba(0, 255, 136, 0.2);
-        transition: transform 0.3s, box-shadow 0.3s;
+        border: 1px solid rgba(76, 175, 80, 0.2);
+        transition: all 0.3s;
     }
 
     .event-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 5px 20px rgba(0, 255, 136, 0.3);
-        border-color: #00ff88;
+        box-shadow: 0 5px 20px rgba(76, 175, 80, 0.3);
+        border-color: #4CAF50;
     }
 
     .event-card h3 {
-        color: #00ff88;
-        margin-bottom: 0.5rem;
+        color: #4CAF50;
+        margin-bottom: 0.8rem;
         font-size: 18px;
+        font-weight: 600;
     }
 
     .event-detail {
@@ -175,30 +201,33 @@
         align-items: center;
         margin: 0.5rem 0;
         font-size: 14px;
-        color: rgba(255, 255, 255, 0.8);
+        color: #ccc;
     }
 
     .event-detail svg {
         width: 16px;
         height: 16px;
         margin-right: 8px;
-        stroke: #00ff88;
+        stroke: #4CAF50;
     }
 
     .event-tag {
         display: inline-block;
-        background: rgba(0, 255, 136, 0.2);
-        color: #00ff88;
-        padding: 4px 12px;
+        background: rgba(76, 175, 80, 0.2);
+        color: #4CAF50;
+        padding: 5px 12px;
         border-radius: 15px;
         font-size: 12px;
         margin-top: 0.5rem;
+        font-weight: 500;
+        border: 1px solid #4CAF50;
     }
 
     .event-actions {
         display: flex;
         gap: 10px;
         margin-top: 1rem;
+        flex-wrap: wrap;
     }
 
     .btn-small {
@@ -217,9 +246,10 @@
         height: 64px;
         margin-bottom: 1rem;
         opacity: 0.3;
+        stroke: #4CAF50;
     }
 
-    /* Modal for QR Code */
+    /* Modal for QR Code - FIXED ALIGNMENT */
     .modal {
         display: none;
         position: fixed;
@@ -228,84 +258,116 @@
         top: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.8);
+        background-color: rgba(0, 0, 0, 0.9);
+        overflow: auto;
     }
 
     .modal-content {
-        background: rgba(0, 0, 0, 0.95);
-        margin: 5% auto;
-        padding: 2rem;
-        border: 2px solid #00ff88;
-        border-radius: 12px;
+        background: rgba(17, 17, 17, 0.98);
+        margin: 3% auto;
+        padding: 2.5rem;
+        border: 2px solid #4CAF50;
+        border-radius: 16px;
         width: 90%;
         max-width: 500px;
         text-align: center;
+        position: relative;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
     }
 
     .modal-content h3 {
-        color: #00ff88;
-        margin-bottom: 1rem;
+        color: #4CAF50;
+        margin-bottom: 0.5rem;
+        font-size: 24px;
+        font-weight: 600;
+    }
+
+    .modal-content p {
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 1.5rem;
+        font-size: 14px;
+    }
+
+    .qr-image-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 1.5rem 0;
+        padding: 20px;
+        background: white;
+        border-radius: 12px;
     }
 
     .modal-content img {
         max-width: 100%;
+        height: auto;
+        display: block;
         border-radius: 8px;
-        background: white;
-        padding: 20px;
     }
 
     .close {
         color: #aaa;
-        float: right;
-        font-size: 28px;
+        position: absolute;
+        top: 15px;
+        right: 25px;
+        font-size: 32px;
         font-weight: bold;
         cursor: pointer;
+        transition: color 0.3s;
     }
 
     .close:hover {
-        color: #00ff88;
+        color: #4CAF50;
     }
 
     .attendance-badge {
         display: inline-block;
-        padding: 4px 12px;
+        padding: 5px 12px;
         border-radius: 15px;
         font-size: 12px;
         margin-top: 0.5rem;
-        font-weight: bold;
+        font-weight: 600;
     }
 
     .badge-attended {
-        background: rgba(0, 255, 136, 0.3);
-        color: #00ff88;
+        background: rgba(76, 175, 80, 0.3);
+        color: #4CAF50;
+        border: 1px solid #4CAF50;
     }
 
     .badge-pending {
         background: rgba(255, 193, 7, 0.3);
         color: #ffc107;
+        border: 1px solid #ffc107;
     }
 
     .tab-header {
         display: flex;
-        gap: 20px;
+        gap: 15px;
         margin-bottom: 1.5rem;
         cursor: pointer;
+        flex-wrap: wrap;
     }
 
     .tab-item {
-        padding: 10px 20px;
+        padding: 12px 24px;
         border-radius: 8px;
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(0,255,136,0.2);
-        color: #00ff88;
-        font-weight: bold;
-        transition: 0.3s;
+        background: rgba(0, 0, 0, 0.3);
+        border: 2px solid rgba(76, 175, 80, 0.2);
+        color: #4CAF50;
+        font-weight: 500;
+        transition: all 0.3s;
     }
 
     .tab-item.active {
-        background: #00ff88;
-        color: #000;
-        border-color: #00ff88;
+        background: #4CAF50;
+        color: #111;
+        border-color: #4CAF50;
+    }
+
+    .tab-item:hover:not(.active) {
+        border-color: #4CAF50;
+        background: rgba(76, 175, 80, 0.1);
     }
 
     .tab-content {
@@ -317,6 +379,11 @@
     }
 
     @media (max-width: 768px) {
+        .profile-container {
+            padding: 1.5rem;
+            margin: 20px 15px;
+        }
+
         .events-grid {
             grid-template-columns: 1fr;
         }
@@ -324,6 +391,15 @@
         .tab-header {
             flex-direction: column;
             gap: 10px;
+        }
+
+        .modal-content {
+            margin: 10% auto;
+            padding: 2rem;
+        }
+
+        .qr-image-container {
+            padding: 15px;
         }
     }
 </style>
@@ -339,10 +415,8 @@
             {{ user.username[0].upper() }}
         </div>
         <h1>{{ user.username }}</h1>
-        <p>Member since {{ user.created_at.strftime('%B %Y') if user.created_at else 'Recently' }}</p>
+        <p style="color: #ccc;">Member since {{ user.created_at.strftime('%B %Y') if user.created_at else 'Recently' }}</p>
     </div>
-
-
 
     <!-- Account Information -->
     <div class="profile-section">
@@ -495,7 +569,6 @@
                         <span class="event-tag">{{ event.tags.value if event.tags else 'Event' }}</span>
 
                         <div class="event-actions">
-                            <!-- change here -->
                             <a href="{{ url_for('attendees.scan_qr_page', event_id=event.id) }}" 
                                class="btn btn-secondary btn-small">Manage Event</a>
 
@@ -532,14 +605,16 @@
 
 </div>
 
-<!-- QR Code Modal -->
+<!-- QR Code Modal - FIXED -->
 <div id="qrModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeQR()">&times;</span>
         <h3 id="modalEventTitle"></h3>
-        <p style="color: rgba(255,255,255,0.6); margin-bottom: 1rem;">Show this QR code at the event for attendance verification</p>
-        <img id="modalQRImage" src="" alt="QR Code">
-        <button class="btn btn-primary" style="margin-top: 1rem;" onclick="downloadQR()">Download QR Code</button>
+        <p>Show this QR code at the event for attendance verification</p>
+        <div class="qr-image-container">
+            <img id="modalQRImage" src="" alt="QR Code">
+        </div>
+        <button class="btn btn-primary" onclick="downloadQR()">Download QR Code</button>
     </div>
 </div>
 
@@ -589,12 +664,11 @@
 
     // Close modal when clicking outside
     window.onclick = function(event) {
-    const modal = document.getElementById('qrModal');
-    if (event.target === modal) {
-        closeQR();
-    }
-};
-
+        const modal = document.getElementById('qrModal');
+        if (event.target === modal) {
+            closeQR();
+        }
+    };
 </script>
 
 {% endblock %}
