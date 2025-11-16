@@ -192,7 +192,8 @@ def get_event(event_id):
         "tags": event.tags.value
     }
 
-    return jsonify(data), 200
+    return render_template("event_details.html", event=event)
+
 
 
 # -------------------------------------
