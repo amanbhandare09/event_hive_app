@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ event.title }} | Event Details</title>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(120deg, #0a0a0a, #003300);
+            color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        nav {
+            background-color: #111;
+            border-bottom: 2px solid #4CAF50;
+            padding: 15px 40px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+            text-decoration: none;
+        }
+
+        .logo-link {
+            text-decoration: none;
+            color: inherit;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .logo-link:hover {
+            opacity: 0.8;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            list-style: none;
+            align-items: center;
+        }
+
+        .profile-circle {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #111;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            border: 2px solid #4CAF50;
+            transition: 0.3s;
+        }
+
+        .profile-circle:hover {
+            background-color: #45a049;
+        }
+
+        .create-event-btn {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+
+        .create-event-btn:hover {
+            background-color: #45a049;
+        }
+
+        /* Container */
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background: rgba(17, 17, 17, 0.9);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+            border-left: 5px solid #4CAF50;
+            backdrop-filter: blur(10px);
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #f0f0f0;
+            line-height: 1.3;
+        }
+
+        .visibility-tag {
+            font-size: 12px;
+            padding: 5px 12px;
+            border-radius: 6px;
+            margin-left: 10px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .public {
+            background-color: #2e7d32;
+            color: white;
+        }
+
+        .private {
+            background-color: #b71c1c;
+            color: white;
+        }
+
+        .meta {
+            color: #ccc;
+            margin-bottom: 25px;
+            line-height: 2;
+            font-size: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .meta strong {
+            color: #4CAF50;
+        }
+
+        .section-title {
+            margin-top: 30px;
+            margin-bottom: 12px;
+            font-size: 20px;
+            font-weight: 600;
+            color: #4CAF50;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 8px;
+        }
+
+        .description-text {
+            color: #ddd;
+            line-height: 1.8;
+            font-size: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 15px;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            margin-right: 10px;
+            margin-top: 10px;
+            display: inline-block;
+            font-weight: 500;
+            transition: all 0.3s;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .register {
+            background: #4CAF50;
+        }
+
+        .register:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .unregister {
+            background: #d9534f;
+        }
+
+        .unregister:hover {
+            background: #c9302c;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(217, 83, 79, 0.4);
+        }
+
+        .back {
+            background: #555;
+        }
+
+        .back:hover {
+            background: #666;
+            transform: translateY(-2px);
+        }
+
+        .tag-box {
+            margin-top: 10px;
+            background: rgba(76, 175, 80, 0.15);
+            padding: 10px 16px;
+            border-radius: 8px;
+            display: inline-block;
+            font-size: 14px;
+            color: #4CAF50;
+            font-weight: 500;
+            border: 1px solid #4CAF50;
+        }
+
+        .button-group {
+            margin-top: 35px;
+            padding-top: 25px;
+            border-top: 1px solid #333;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            nav {
+                padding: 15px 20px;
+            }
+
+            .container {
+                margin: 30px 15px;
+                padding: 25px;
+            }
+
+            .title {
+                font-size: 24px;
+            }
+
+            .visibility-tag {
+                display: block;
+                margin-left: 0;
+                margin-top: 10px;
+                width: fit-content;
+            }
+
+            .btn {
+                width: 100%;
+                margin-right: 0;
+                text-align: center;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">
+                <a href="{{ url_for('main.profile') }}" class="logo-link">EventHive</a>
+            </div>
+            <div class="nav-links">
+                <a href="{{ url_for('main.profile') }}" class="profile-circle">
+                    {{ current_user.username[0].upper() }}
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <div class="title">
+            {{ event.title }}
+            <span class="visibility-tag {{ 'private' if event.visibility.value == 'private' else 'public' }}">
+                {{ event.visibility.value }}
+            </span>
+        </div>
+
+        <div class="meta">
+            <strong>Hosted by:</strong> {{ event.creator.username }} <br>
+            <strong>Date:</strong> {{ event.date.strftime('%d %b %Y') }} <br>
+            <strong>Time:</strong> {{ event.starttime.strftime('%I:%M %p') }} - {{ event.endtime.strftime('%I:%M %p') }} <br>
+            <strong>Location:</strong> {{ event.venue }} <br>
+            <strong>Mode:</strong> {{ event.mode.value|capitalize }} <br>
+        </div>
+
+        <div class="section-title">Description</div>
+        <p class="description-text">{{ event.description }}</p>
+
+        <div class="section-title">Tag</div>
+        <div class="tag-box">{{ event.tags.value }}</div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="button-group">
+            {% set is_registered = current_user in event.attendees %}
+            {% set attendee_record = current_user.attendee_links|selectattr('event_id', 'equalto', event.id)|first %}
+
+            {% if event.creator.id == current_user.id %}
+                <!-- No register button for creator -->
+
+            {% else %}
+
+                {% if is_registered or attendee_record %}
+                    <form action="{{ url_for('attendees.unregister_attendee', event_id=event.id) }}" method="POST" style="display:inline;">
+                        <button class="btn unregister">Unregister</button>
+                    </form>
+                {% else %}
+                    {% if event.visibility.value == 'private' %}
+                        <form action="{{ url_for('attendees.create_attendee') }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="eventId" value="{{ event.id }}">
+                            <button class="btn register">Request to Join</button>
+                        </form>
+                    {% else %}
+                        <form action="{{ url_for('attendees.create_attendee') }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="eventId" value="{{ event.id }}">
+                            <button class="btn register">Register</button>
+                        </form>
+                    {% endif %}
+                {% endif %}
+
+            {% endif %}
+
+            <!-- BACK BUTTON -->
+            <a href="{{ url_for('main.profile') }}" class="btn back">Back to Events</a>
+        </div>
+
+    </div>
+
+</body>
+</html>

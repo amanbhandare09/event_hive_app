@@ -241,7 +241,8 @@ def get_event(event_id):
         "tags": event.tags.value
     }
 
-    return jsonify(data), 200
+    return render_template("event_details.html", event=event)
+
 
 
 # -------------------------------------
@@ -505,7 +506,7 @@ def create_attendee():
     db.session.commit()
 
     flash("Successfully registered for the event!", "success")
-    return redirect(url_for("attendees.registration_success"))
+    return redirect(url_for("attendees.registration_success", attendee_id=attendee.id))
 
 
 @attendees_blueprint.route('/registration-success/<int:attendee_id>')
