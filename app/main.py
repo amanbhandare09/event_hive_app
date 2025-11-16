@@ -3,6 +3,7 @@ import secrets
 from flask import Blueprint, current_app, flash, jsonify, redirect, request, render_template, url_for
 from datetime import datetime
 from flask_login import current_user, login_required
+from sqlalchemy import or_, and_
 import qrcode
 import json
 from app import db
@@ -41,62 +42,110 @@ def user_profile():
     
     return render_template("user_profile.html", user=user)
 
-
-@main_blueprint.route("/profile", methods=["GET"])
+@main_blueprint.route('/profile', methods=['GET'])
 @login_required
 def profile():
+    """
+    Display all events with dynamic filtering support
+    Supports multiple filters of the same type: title, organizer, tag, location, mode, date, visibility
+    """
+    
+    # DEBUG: Print received parameters
+    # print("=" * 50)
+    # print("DEBUG - Received URL parameters:")
+    # print(f"request.args: {request.args}")
+    # print("=" * 50)
+    
+    # Collect filter parameters - now supports multiple values per filter type
+    filters = {
+        "title": request.args.getlist("title"),
+        "organizer": request.args.getlist("organizer"),
+        "tag": request.args.getlist("tag"),
+        "location": request.args.getlist("location"),
+        "mode": request.args.getlist("mode"),
+        "date": request.args.getlist("date"),
+        "visibility": request.args.getlist("visibility"),
+    }
+    
+    # DEBUG: Print parsed filters
+    #print("DEBUG - Parsed filters:")
+    for key, values in filters.items():
+        if values:
+            pass
+           # print(f"  {key}: {values}")
+    #print("=" * 50)
 
-    # Read search filters from request
-    title = request.args.get("title", "").strip()
-    tag = request.args.get("tag", "").strip()
-    organizer = request.args.get("organizer", "").strip()
-    date = request.args.get("date", "").strip()
-    visibility = request.args.get("visibility", "").strip()
-    location = request.args.get("location", "").strip()
-    mode = request.args.get("mode", "").strip()
+    # Base query
+    query = Event.query
 
-    # Start query
-    events = Event.query
+    # Apply filters with OR logic for multiple values of same type
+    if filters["title"]:
+        title_conditions = [Event.title.ilike(f"%{t}%") for t in filters["title"]]
+        query = query.filter(or_(*title_conditions))
+       # print(f"Applied title filter: {filters['title']}")
 
-    # -----------------------
-    # 🔍 APPLY FILTERS
-    # -----------------------
-    if title:
-        events = events.filter(Event.title.ilike(f"%{title}%"))
+    if filters["organizer"]:
+        organizer_conditions = [
+            Event.creator.has(username=org) for org in filters["organizer"]
+        ]
+        query = query.filter(or_(*organizer_conditions))
+       # print(f"Applied organizer filter: {filters['organizer']}")
 
-    if tag:
-        # If tag is Enum: Event.tags is EventTagEnum
-        events = events.filter(Event.tags.ilike(f"%{tag}%"))
+    if filters["tag"]:
+        tag_conditions = [Event.tags.ilike(f"%{t}%") for t in filters["tag"]]
+        query = query.filter(or_(*tag_conditions))
+       # print(f"Applied tag filter: {filters['tag']}")
 
-    if organizer:
-        events = events.join(User).filter(User.username.ilike(f"%{organizer}%"))
+    if filters["location"]:
+        location_conditions = [Event.venue.ilike(f"%{loc}%") for loc in filters["location"]]
+        query = query.filter(or_(*location_conditions))
+       # print(f"Applied location filter: {filters['location']}")
 
-    if date:
-        events = events.filter(Event.date == date)
+    if filters["mode"]:
+        mode_conditions = [Event.mode.ilike(f"%{m}%") for m in filters["mode"]]
+        query = query.filter(or_(*mode_conditions))
+       # print(f"Applied mode filter: {filters['mode']}")
 
-    if visibility:
-        events = events.filter(Event.visibility == visibility)
+    if filters["date"]:
+        date_conditions = []
+        for date_str in filters["date"]:
+            try:
+                # Try to parse date in various formats
+                parsed_date = None
+                for fmt in ['%Y-%m-%d', '%d-%m-%Y', '%d/%m/%Y', '%d %b %Y']:
+                    try:
+                        parsed_date = datetime.strptime(date_str, fmt).date()
+                        break
+                    except ValueError:
+                        continue
+                
+                if parsed_date:
+                    date_conditions.append(Event.date == parsed_date)
+                    print(f"Parsed date: {date_str} -> {parsed_date}")
+            except Exception as e:
+               # print(f"Failed to parse date: {date_str}, error: {e}")
+                pass  # Invalid date format, skip this date
+        
+        if date_conditions:
+            query = query.filter(or_(*date_conditions))
+           # print(f"Applied date filter with {len(date_conditions)} conditions")
 
-    if location:
-        events = events.filter(Event.venue.ilike(f"%{location}%"))
+    if filters["visibility"]:
+        visibility_conditions = [Event.visibility == vis for vis in filters["visibility"]]
+        query = query.filter(or_(*visibility_conditions))
+       # print(f"Applied visibility filter: {filters['visibility']}")
 
-    if mode:
-        events = events.filter(Event.mode == mode)
+    # Final sorted events
+    events = query.order_by(Event.date).all()
+   # print(f"DEBUG - Found {len(events)} events after filtering")
+   # print("=" * 50)
 
-    # Sort events
-    events = events.order_by(Event.date.desc()).all()
+    # Join request status for each event (if private)
+    user_requests = {
+        req.event_id: req.status
+        for req in JoinRequest.query.filter_by(user_id=current_user.id).all()
+    }
 
-    # -----------------------
-    # 📌 USER'S JOIN REQUEST STATUS (FOR PRIVATE EVENTS)
-    # -----------------------
-    user_requests = {}
-    join_requests = JoinRequest.query.filter_by(user_id=current_user.id).all()
-    for req in join_requests:
-        user_requests[req.event_id] = req.status
-
-    # -----------------------
-    # 📌 RENDER PAGE
-    # -----------------------
     return render_template(
         "profile.html",
         events=events,
