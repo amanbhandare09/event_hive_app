@@ -456,7 +456,7 @@ def create_attendee():
     db.session.commit()
 
     flash("Successfully registered for the event!", "success")
-    return redirect(url_for("attendees.registration_success"))
+    return redirect(url_for("attendees.registration_success", attendee_id=attendee.id))
 
 
 @attendees_blueprint.route('/registration-success/<int:attendee_id>')
