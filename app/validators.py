@@ -119,7 +119,7 @@ class EventFilterSchema(BaseModel):
 # ATTENDEE REGISTRATION
 # ------------------------------------------------------------------
 class AttendeeRegistrationSchema(BaseModel):
-    event_id: int = Field(..., ge=1)
+    eventId: int = Field(..., ge=1)
 
 # ------------------------------------------------------------------
 # QR CODE SCAN / MARK ATTENDANCE
