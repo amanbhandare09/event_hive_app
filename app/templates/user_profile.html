@@ -342,16 +342,7 @@
         <p>Member since {{ user.created_at.strftime('%B %Y') if user.created_at else 'Recently' }}</p>
     </div>
 
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="flash-message flash-{{ category }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+
 
     <!-- Account Information -->
     <div class="profile-section">
