@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 import enum
 from app import db
 from flask_login import UserMixin
+from datetime import datetime
 
 # Association table for many-to-many relationship
 event_attendees = db.Table(
@@ -137,3 +138,9 @@ class Attendee(db.Model):
     # Relationships
     user = db.relationship("User", back_populates="attendee_links")
     event = db.relationship("Event", back_populates="attendee_links")
+
+class EventNotification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey('events.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

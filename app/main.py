@@ -3,10 +3,11 @@ import secrets
 from flask import Blueprint, current_app, flash, jsonify, redirect, request, render_template, url_for
 from datetime import datetime
 from flask_login import current_user, login_required
+from sqlalchemy import or_, and_
 import qrcode
 import json
 from app import db
-from models.model import Event, EventMode, User, event_attendees, EventVisibility, Eventtag, JoinRequest, Attendee
+from models.model import Event, EventMode, User, event_attendees, EventVisibility, Eventtag, JoinRequest, Attendee, EventNotification
 from app.validators import (
     EventCreateUpdateSchema, 
     EventFilterSchema, 
@@ -48,58 +49,123 @@ def user_profile():
     
     return render_template("user_profile.html", user=user)
 
-
-@main_blueprint.route("/profile", methods=["GET"])
+@main_blueprint.route('/profile', methods=['GET'])
 @login_required
 def profile():
-    # Validate query parameters
-    filters = validate_query(EventFilterSchema)
+    """
+    Display all events with dynamic filtering support
+    Supports multiple filters of the same type: title, organizer, tag, location, mode, date, visibility
+    """
+    
+    # DEBUG: Print received parameters
+    # print("=" * 50)
+    # print("DEBUG - Received URL parameters:")
+    # print(f"request.args: {request.args}")
+    # print("=" * 50)
+    
+    # Collect filter parameters - now supports multiple values per filter type
+    filters = {
+        "title": request.args.getlist("title"),
+        "organizer": request.args.getlist("organizer"),
+        "tag": request.args.getlist("tag"),
+        "location": request.args.getlist("location"),
+        "mode": request.args.getlist("mode"),
+        "date": request.args.getlist("date"),
+        "visibility": request.args.getlist("visibility"),
+    }
+    
+    # DEBUG: Print parsed filters
+    #print("DEBUG - Parsed filters:")
+    for key, values in filters.items():
+        if values:
+            pass
+           # print(f"  {key}: {values}")
+    #print("=" * 50)
 
-    # Start query
-    events = Event.query
+    # Base query
+    query = Event.query
 
-    # -----------------------
-    # 🔍 APPLY FILTERS
-    # -----------------------
-    if filters.title:
-        events = events.filter(Event.title.ilike(f"%{filters.title}%"))
+    # Apply filters with OR logic for multiple values of same type
+    if filters["title"]:
+        title_conditions = [Event.title.ilike(f"%{t}%") for t in filters["title"]]
+        query = query.filter(or_(*title_conditions))
+       # print(f"Applied title filter: {filters['title']}")
 
-    if filters.tag:
-        events = events.filter(Event.tags.ilike(f"%{filters.tag}%"))
+    if filters["organizer"]:
+        organizer_conditions = [
+            Event.creator.has(username=org) for org in filters["organizer"]
+        ]
+        query = query.filter(or_(*organizer_conditions))
+       # print(f"Applied organizer filter: {filters['organizer']}")
 
-    if filters.organizer:
-        events = events.join(User).filter(User.username.ilike(f"%{filters.organizer}%"))
+    if filters["tag"]:
+        tag_conditions = [Event.tags.ilike(f"%{t}%") for t in filters["tag"]]
+        query = query.filter(or_(*tag_conditions))
+       # print(f"Applied tag filter: {filters['tag']}")
 
-    if filters.date:
-        events = events.filter(Event.date == filters.date)
+    if filters["location"]:
+        location_conditions = [Event.venue.ilike(f"%{loc}%") for loc in filters["location"]]
+        query = query.filter(or_(*location_conditions))
+       # print(f"Applied location filter: {filters['location']}")
 
-    if filters.visibility:
-        events = events.filter(Event.visibility == filters.visibility.value)
+    if filters["mode"]:
+        mode_conditions = [Event.mode.ilike(f"%{m}%") for m in filters["mode"]]
+        query = query.filter(or_(*mode_conditions))
+       # print(f"Applied mode filter: {filters['mode']}")
 
-    if filters.location:
-        events = events.filter(Event.venue.ilike(f"%{filters.location}%"))
+    if filters["date"]:
+        date_conditions = []
+        for date_str in filters["date"]:
+            try:
+                # Try to parse date in various formats
+                parsed_date = None
+                for fmt in ['%Y-%m-%d', '%d-%m-%Y', '%d/%m/%Y', '%d %b %Y']:
+                    try:
+                        parsed_date = datetime.strptime(date_str, fmt).date()
+                        break
+                    except ValueError:
+                        continue
+                
+                if parsed_date:
+                    date_conditions.append(Event.date == parsed_date)
+                    print(f"Parsed date: {date_str} -> {parsed_date}")
+            except Exception as e:
+               # print(f"Failed to parse date: {date_str}, error: {e}")
+                pass  # Invalid date format, skip this date
+        
+        if date_conditions:
+            query = query.filter(or_(*date_conditions))
+           # print(f"Applied date filter with {len(date_conditions)} conditions")
 
-    if filters.mode:
-        events = events.filter(Event.mode == filters.mode.value)
+    if filters["visibility"]:
+        visibility_conditions = [Event.visibility == vis for vis in filters["visibility"]]
+        query = query.filter(or_(*visibility_conditions))
+       # print(f"Applied visibility filter: {filters['visibility']}")
 
-    # Sort events
-    events = events.order_by(Event.date.desc()).all()
+    # Final sorted events
+    events = query.order_by(Event.date).all()
+   # print(f"DEBUG - Found {len(events)} events after filtering")
+   # print("=" * 50)
 
-    # -----------------------
-    # 📌 USER'S JOIN REQUEST STATUS (FOR PRIVATE EVENTS)
-    # -----------------------
-    user_requests = {}
-    join_requests = JoinRequest.query.filter_by(user_id=current_user.id).all()
-    for req in join_requests:
-        user_requests[req.event_id] = req.status
+    # Join request status for each event (if private)
+    user_requests = {
+        req.event_id: req.status
+        for req in JoinRequest.query.filter_by(user_id=current_user.id).all()
+    }
 
-    # -----------------------
-    # 📌 RENDER PAGE
-    # -----------------------
+    # Fetch events where current user has enabled notifications
+    user_notified_event_ids = [
+        n.event_id for n in EventNotification.query.filter_by(user_id=current_user.id).all()
+    ]
+
+    # Fetch pending private requests if needed
+    user_requests = {}  # optional: populate if using private events
+
     return render_template(
         "profile.html",
         events=events,
-        user_requests=user_requests
+        user_requests=user_requests,
+        user_notified_event_ids=user_notified_event_ids
     )
 
 
@@ -127,36 +193,56 @@ def create_event_page():
     return render_template("create.html")
 
 
-# -------------------------------------
-# CREATE EVENT (POST)
-# -------------------------------------
 @events_blueprint.route("/create", methods=["POST"])
 @login_required
 def create_event():
-    # Validate request data
-    if request.is_json:
-        data = validate_json(EventCreateUpdateSchema)
-    else:
-        data = validate_form(EventCreateUpdateSchema)
+    data = request.get_json() if request.is_json else request.form
 
-    event = Event(
-        title=data.title,
-        description=data.description,
-        date=data.date,
-        starttime=data.starttime,
-        endtime=data.endtime,
-        mode=EventMode(data.mode.value),
-        visibility=EventVisibility(data.visibility.value),
-        venue=data.venue,
-        capacity=data.capacity,
-        organizer_id=current_user.id,
-        tags=Eventtag(data.tags.value),
-    )
+    try:
+        # Date & time
+        try:
+            date_value = datetime.strptime(data.get("date"), "%Y-%m-%d").date() if data.get("date") else None
+        except ValueError:
+            date_value = None
 
-    db.session.add(event)
-    db.session.commit()
+        try:
+            start_value = datetime.strptime(data.get("starttime"), "%H:%M").time() if data.get("starttime") else None
+        except ValueError:
+            start_value = None
 
-    return redirect(url_for("main.profile"))
+        try:
+            end_value = datetime.strptime(data.get("endtime"), "%H:%M").time() if data.get("endtime") else None
+        except ValueError:
+            end_value = None
+
+        # Mode & visibility
+        mode_value = (data.get("mode") or "online").lower()
+        visibility_value = (data.get("visibility") or "public").lower()
+
+        # Capacity
+        capacity = int(data.get("capacity") or 100)
+
+        event = Event(
+            title=data.get("title"),
+            description=data.get("description"),
+            date=date_value,
+            starttime=start_value,
+            endtime=end_value,
+            mode=EventMode(mode_value),
+            visibility=EventVisibility(visibility_value),
+            venue=data.get("venue"),
+            capacity=capacity,
+            organizer_id=current_user.id,
+            tags=Eventtag(data.get("tags") or ""),
+        )
+
+        db.session.add(event)
+        db.session.commit()
+        return redirect(url_for("main.profile"))
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 
 # -------------------------------------
@@ -181,7 +267,8 @@ def get_event(event_id):
         "tags": event.tags.value
     }
 
-    return jsonify(data), 200
+    return render_template("event_details.html", event=event)
+
 
 
 # -------------------------------------
@@ -459,6 +546,24 @@ def create_attendee():
     flash("Successfully registered for the event!", "success")
     return redirect(url_for("attendees.registration_success", attendee_id=attendee.id))
 
+
+@attendees_blueprint.route('/registration-success/<int:attendee_id>')
+@login_required
+def registration_success(attendee_id):
+    attendee = Attendee.query.get_or_404(attendee_id)
+    
+    # Security check: only show to the registered user
+    if attendee.user_id != current_user.id:
+        flash('Access denied', 'danger')
+        return redirect(url_for('main.profile'))
+    
+    event = attendee.event
+    
+    return render_template('registration_success.html', 
+                         attendee=attendee, 
+                         event=event)
+
+
 # -------------------------------------
 # UNREGISTER
 # -------------------------------------
@@ -625,3 +730,27 @@ def my_events_page():
         events=events,
         search_query=search_query
     )
+
+@events_blueprint.route("/toggle-notification", methods=["POST"])
+@login_required
+def toggle_notification():
+    data = request.get_json()
+    event_id = data.get("event_id")
+    enabled = data.get("enabled", False)
+
+    if not event_id:
+        return jsonify({"error": "Missing event ID"}), 400
+
+    notif = EventNotification.query.filter_by(user_id=current_user.id, event_id=event_id).first()
+
+    if enabled:
+        if not notif:
+            notif = EventNotification(user_id=current_user.id, event_id=event_id)
+            db.session.add(notif)
+            db.session.commit()
+        return jsonify({"message": f"Notifications enabled for event {event_id}"})
+    else:
+        if notif:
+            db.session.delete(notif)
+            db.session.commit()
+        return jsonify({"message": f"Notifications disabled for event {event_id}"})
