@@ -325,17 +325,32 @@ def mark_attendance():
 # -------------------------------------
 # REGISTER FOR EVENT (PUBLIC/PRIVATE LOGIC)
 # -------------------------------------
+# -------------------------------------
+# REGISTER FOR EVENT (PUBLIC/PRIVATE LOGIC)
+# -------------------------------------
 @attendees_blueprint.route("/register", methods=["POST"])
 @login_required
 def create_attendee():
-    # Validate registration data
-    data = validate_form(AttendeeRegistrationSchema)
-    event_id = data.eventId
+    try:
+        # Validate registration data (support both JSON and form)
+        if request.is_json:
+            data = validate_json(AttendeeRegistrationSchema)
+        else:
+            data = validate_form(AttendeeRegistrationSchema)
+        event_id = data.eventId
+    except Exception as e:
+        print(f"Validation Error: {str(e)}")
+        if request.is_json:
+            return jsonify({"error": f"Validation error: {str(e)}"}), 422
+        flash(f"Validation error: {str(e)}", "danger")
+        return redirect(url_for("main.profile"))
 
     event = Event.query.get_or_404(event_id)
 
     # Organizer cannot register for their own event
     if event.organizer_id == current_user.id:
+        if request.is_json:
+            return jsonify({"error": "You cannot register for your own event!"}), 403
         flash("You cannot register for your own event!", "danger")
         return redirect(url_for("main.profile"))
 
@@ -346,6 +361,8 @@ def create_attendee():
     ).first()
     
     if existing_attendee or current_user in event.attendees:
+        if request.is_json:
+            return jsonify({"error": "You are already registered for this event!"}), 400
         flash("You are already registered for this event!", "warning")
         return redirect(url_for("main.profile"))
 
@@ -365,6 +382,8 @@ def create_attendee():
             db.session.add(new_req)
             db.session.commit()
 
+        if request.is_json:
+            return jsonify({"message": "Join request sent! Please wait for approval."}), 200
         flash("Join request sent! Please wait for approval.", "info")
         return redirect(url_for("main.profile"))
 
@@ -372,6 +391,8 @@ def create_attendee():
     # Check capacity
     current_attendees = Attendee.query.filter_by(event_id=event_id).count()
     if current_attendees >= event.capacity:
+        if request.is_json:
+            return jsonify({"error": "Sorry, this event is full!"}), 400
         flash("Sorry, this event is full!", "danger")
         return redirect(url_for("main.profile"))
 
@@ -428,26 +449,15 @@ def create_attendee():
 
     db.session.commit()
 
+    if request.is_json:
+        return jsonify({
+            "message": "Successfully registered for the event!",
+            "attendee_id": attendee.id,
+            "qr_code_path": attendee.qr_code_path
+        }), 201
+
     flash("Successfully registered for the event!", "success")
     return redirect(url_for("attendees.registration_success", attendee_id=attendee.id))
-
-
-@attendees_blueprint.route('/registration-success/<int:attendee_id>')
-@login_required
-def registration_success(attendee_id):
-    attendee = Attendee.query.get_or_404(attendee_id)
-    
-    # Security check: only show to the registered user
-    if attendee.user_id != current_user.id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('main.profile'))
-    
-    event = attendee.event
-    
-    return render_template('registration_success.html', 
-                         attendee=attendee, 
-                         event=event)
-
 
 # -------------------------------------
 # UNREGISTER
