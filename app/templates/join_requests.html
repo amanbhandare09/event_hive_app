@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Join Requests | EventHive</title>
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(120deg, #0a0a0a, #003300);
+      color: #f0f0f0;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #111;
+      padding: 15px 40px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #4CAF50;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .create-event-btn,
+    .logout-btn {
+      background-color: #4CAF50;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background-color 0.3s;
+    }
+
+    .create-event-btn:hover {
+      background-color: #45a049;
+    }
+
+    .logout-btn:hover {
+      background-color: #388e3c;
+    }
+
+    .page-container {
+      max-width: 900px;
+      margin: 40px auto;
+      background: #1a1a1a;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.7);
+    }
+
+    h2 {
+      margin-bottom: 15px;
+      color: #4CAF50;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #121212;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #333;
+    }
+
+    th {
+      background-color: #0f2f0f;
+      color: #4CAF50;
+      text-align: left;
+    }
+
+    tr:hover {
+      background-color: #1f1f1f;
+    }
+
+    .badge {
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-pending {
+      background-color: #ff9800;
+      color: #000;
+    }
+
+    .badge-approved {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .badge-rejected {
+      background-color: #d9534f;
+      color: white;
+    }
+
+    .btn {
+      padding: 7px 14px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      color: #fff;
+      font-weight: 500;
+    }
+
+    .btn-approve {
+      background-color: #4CAF50;
+    }
+
+    .btn-approve:hover {
+      background-color: #3d8b40;
+    }
+
+    .btn-reject {
+      background-color: #d9534f;
+    }
+
+    .btn-reject:hover {
+      background-color: #c9302c;
+    }
+
+    .btn-back {
+      display: inline-block;
+      margin-bottom: 15px;
+      background-color: #4CAF50;
+      padding: 10px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      color: white;
+      font-weight: 500;
+    }
+
+    .btn-back:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">EventHive</div>
+
+</header>
+
+<div class="page-container">
+
+  <a href="{{ url_for('main.profile') }}" class="btn-back">← Back to Profile</a>
+
+  <h2>Join Requests for: <strong>{{ event.title }}</strong></h2>
+  <hr>
+
+  {% if requests|length == 0 %}
+      <p class="text-muted">No join requests yet.</p>
+
+  {% else %}
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for r in requests %}
+          <tr>
+            <td>{{ r.user.username }}</td>
+
+            <td>
+              {% if r.status == "pending" %}
+                <span class="badge badge-pending">Pending</span>
+              {% elif r.status == "approved" %}
+                <span class="badge badge-approved">Approved</span>
+              {% else %}
+                <span class="badge badge-rejected">Rejected</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if r.status == "pending" %}
+
+                <form method="POST" action="{{ url_for('events.approve_request', request_id=r.id) }}" style="display:inline;">
+                  <button class="btn btn-approve">Approve</button>
+                </form>
+
+                <form method="POST" action="{{ url_for('events.reject_request', request_id=r.id) }}" style="display:inline;">
+                  <button class="btn btn-reject">Reject</button>
+                </form>
+
+              {% else %}
+                <em style="color:#aaa;">No action available</em>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+
+      </table>
+  {% endif %}
+</div>
+
+</body>
+</html>

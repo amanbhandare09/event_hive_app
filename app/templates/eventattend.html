@@ -1,94 +1,120 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Attendees for {{ event.title }}</title>
-  <style>
-    body {
-      background: linear-gradient(120deg, #0a0a0a, #003300);
-      color: #f0f0f0;
-      font-family: 'Poppins', sans-serif;
-      text-align: center;
-      padding: 30px;
-      margin: 0;
-    }
+{% extends "base.html" %}
 
-    h1 {
-      color: #4CAF50;
-      font-size: 28px;
-      margin-bottom: 10px;
-    }
+{% block content %}
 
-    .event-info {
-      margin-bottom: 30px;
-      color: #bbb;
-      font-size: 15px;
-    }
+<style>
+  body {
+    background: linear-gradient(120deg, #0a0a0a, #003300);
+    color: #f0f0f0;
+    font-family: 'Poppins', sans-serif;
+    text-align: center;
+    padding: 30px;
+    margin: 0;
+  }
 
-    ul {
-      list-style: none;
-      padding: 0;
-      max-width: 500px;
-      margin: 0 auto;
-      background: #1a1a1a;
-      border-radius: 12px;
-      box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
-    }
+  h1 {
+    color: #4CAF50;
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
 
-    li {
-      margin: 8px 0;
-      padding: 12px;
-      background: #111;
-      border-radius: 8px;
-      border-left: 4px solid #4CAF50;
-      transition: background-color 0.2s;
-    }
+  .event-info {
+    margin-bottom: 30px;
+    color: #bbb;
+    font-size: 15px;
+  }
 
-    li:hover {
-      background-color: #222;
-    }
+  ul {
+    list-style: none;
+    padding: 0;
+    max-width: 500px;
+    margin: 0 auto;
+    background: #1a1a1a;
+    border-radius: 12px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+  }
 
-    .no-attendees {
-      font-size: 16px;
-      color: #999;
-      margin-top: 20px;
-    }
+  li {
+    margin: 8px 0;
+    padding: 12px;
+    background: #111;
+    border-radius: 8px;
+    border-left: 4px solid #4CAF50;
+    transition: background-color 0.2s;
+  }
 
-    a.back-btn {
-      display: inline-block;
-      margin-top: 25px;
-      padding: 10px 16px;
-      background-color: #4CAF50;
-      color: #fff;
-      border-radius: 8px;
-      text-decoration: none;
-      transition: background-color 0.3s;
-    }
+  li:hover {
+    background-color: #222;
+  }
 
-    a.back-btn:hover {
-      background-color: #45a049;
-    }
-  </style>
-</head>
-<body>
-  <h1>{{ event.title }}</h1>
-  <div class="event-info">
-    <p><strong>Date:</strong> {{ event.date.strftime('%d %b %Y') }}</p>
-    <p><strong>Mode:</strong> {{ event.mode.value|capitalize }}</p>
-    <p><strong>Venue:</strong> {{ event.venue }}</p>
-  </div>
+  .no-attendees {
+    font-size: 16px;
+    color: #999;
+    margin-top: 20px;
+  }
 
-  <h3>Attendees:</h3>
-  {% if attendees %}
-    <ul>
-      {% for attendee in attendees %}
-        <li><strong>{{ attendee.username }}</strong> ({{ attendee.email }})</li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p class="no-attendees">No attendees yet.</p>
-  {% endif %}
+  a.back-btn {
+    display: inline-block;
+    margin-top: 25px;
+    padding: 10px 16px;
+    background-color: #4CAF50;
+    color: #fff;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background-color 0.3s;
+  }
 
-  <a href="{{ url_for('main.profile') }}" class="back-btn">← Back to Events</a>
-</body>
-</html>
+  a.back-btn:hover {
+    background-color: #45a049;
+  }
+
+  .tag-badge {
+    background-color: #2e7d32;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+</style>
+
+<h1>{{ event.title }}</h1>
+
+<div class="event-info">
+  <p><strong>Date:</strong> {{ event.date.strftime('%d %b %Y') }}</p>
+
+  <p>
+    <strong>Time:</strong>
+    {{ event.starttime.strftime('%I:%M %p') }} - {{ event.endtime.strftime('%I:%M %p') }}
+  </p>
+
+  <p><strong>Mode:</strong> {{ event.mode.value|capitalize }}</p>
+  <p><strong>Venue:</strong> {{ event.venue }}</p>
+
+  <p>
+    <strong>Tag:</strong>
+    <span>{{ event.tags.value }}</span>
+  </p>
+
+  <p>
+    <strong>Type:</strong>
+    <span class="tag-badge">{{ event.visibility.value }}</span>
+  </p>
+</div>
+
+<h3>Attendees:</h3>
+
+{% if attendees %}
+  <ul>
+    {% for attendee in attendees %}
+      <li><strong>{{ attendee.username }}</strong> ({{ attendee.email }})</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="no-attendees">No attendees yet.</p>
+{% endif %}
+
+<a href="{{ url_for('main.profile') }}" class="back-btn">← Back to Events</a>
+
+{% endblock %}

@@ -1,230 +1,958 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Events | EventHive</title>
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(120deg, #0a0a0a, #003300);
-      color: #f0f0f0;
-      margin: 0;
-      padding: 0;
-    }
+{% extends "base.html" %}
+{% block title %}My Events | EventHive{% endblock %}
 
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: #111;
-      padding: 15px 40px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    }
+{% block extra_css %}
+<style>
+/* --------------------------------------------------
+   GENERAL CONTAINER
+-------------------------------------------------- */
+body {
+    background: linear-gradient(120deg, #0a0a0a, #003300);
+    font-family: 'Poppins', sans-serif;
+}
 
-    .logo {
-      font-size: 24px;
-      font-weight: bold;
-      color: #4CAF50;
-    }
+.event-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 20px;
+    color: #f0f0f0;
+}
 
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
+.page-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
 
-    .user-info img {
-      width: 45px;
-      height: 45px;
-      border-radius: 50%;
-      border: 2px solid #4CAF50;
-    }
+.page-header h2 {
+    color: #4CAF50;
+    font-size: 32px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
 
+.page-header p {
+    color: #ccc;
+    font-size: 16px;
+}
+
+/* --------------------------------------------------
+   IMPROVED SEARCH BAR - COMPACT
+-------------------------------------------------- */
+.dynamic-search-box {
+    background: rgba(17, 17, 17, 0.95);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.6);
+    border-left: 4px solid #4CAF50;
+    backdrop-filter: blur(10px);
+}
+
+.search-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.search-icon {
+    color: #4CAF50;
+    font-size: 20px;
+}
+
+.search-title {
+    color: #4CAF50;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.search-content {
+    display: block;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    align-items: center;
+}
+
+#searchInput,
+#dateInput {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.4);
+    color: #f0f0f0;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+#searchInput:focus,
+#dateInput:focus {
+    outline: none;
+    border-color: #4CAF50;
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
+#searchInput::placeholder {
+    color: #888;
+}
+
+/* Dropdown Button */
+.dropdown {
+    position: relative;
+}
+
+.dropdown-toggle,
+.search-btn {
+    background: #4CAF50 !important;
+    color: #111 !important;
+    border: none !important;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.dropdown-toggle:hover,
+.search-btn:hover {
+    background: #45a049 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3);
+}
+
+.dropdown-toggle::after {
+    margin-left: 5px;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+    background: rgba(26, 26, 26, 0.98);
+    border: 2px solid rgba(76, 175, 80, 0.3);
+    border-radius: 10px;
+    padding: 8px;
+    margin-top: 8px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+    min-width: 200px;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+    padding: 0;
+}
+
+.dropdown-menu.show {
+    max-height: 400px;
+    opacity: 1;
+    padding: 8px;
+}
+
+.dropdown-item {
+    color: #f0f0f0;
+    padding: 10px 15px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+    transform: translateX(5px);
+}
+
+.dropdown-item:active {
+    background: rgba(76, 175, 80, 0.3);
+}
+
+/* Dropdown Submenu for Visibility */
+.dropdown-submenu {
+    list-style: none;
+    padding-left: 15px;
+    margin-top: 5px;
+}
+
+.dropdown-submenu .dropdown-item {
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.visibility-option {
+    background: rgba(76, 175, 80, 0.05);
+    margin: 3px 0;
+}
+
+.visibility-option:hover {
+    background: rgba(76, 175, 80, 0.15);
+}
+
+/* --------------------------------------------------
+   TAG FILTER CHIPS - COMPACT
+-------------------------------------------------- */
+#tagContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+    min-height: 30px;
+}
+
+.dynamic-tag {
+    background: rgba(76, 175, 80, 0.15);
+    border-radius: 20px;
+    padding: 6px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #4CAF50;
+    border: 1px solid #4CAF50;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.3s;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.dynamic-tag:hover {
+    background: rgba(76, 175, 80, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.dynamic-tag span {
+    cursor: pointer;
+    color: #f44336;
+    font-weight: bold;
+    font-size: 16px;
+    line-height: 1;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+}
+
+.dynamic-tag span:hover {
+    background: rgba(244, 67, 54, 0.2);
+    transform: rotate(90deg);
+}
+
+.filter-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.active-filters-label {
+    color: #888;
+    font-size: 12px;
+}
+
+#clearFilters {
+    background: #dc3545;
+    border: none;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 13px;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+#clearFilters:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(220, 53, 69, 0.3);
+}
+
+/* --------------------------------------------------
+   EVENT CARDS
+-------------------------------------------------- */
+.events-section {
+    margin-top: 30px;
+}
+
+.section-title {
+    color: #4CAF50;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #4CAF50;
+}
+
+.event-card {
+    background: rgba(17, 17, 17, 0.9);
+    border-left: 5px solid #4CAF50;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+    color: #f0f0f0;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+}
+
+.event-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
+}
+
+.event-title {
+    font-size: 22px;
+    margin-bottom: 12px;
+    color: #4CAF50;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.event-meta {
+    color: #ccc;
+    line-height: 1.8;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.event-meta strong {
+    color: #4CAF50;
+}
+
+.visibility-tag {
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    color: #fff;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.visibility-tag.public {
+    background: #2e7d32;
+}
+
+.visibility-tag.private {
+    background: #c62828;
+}
+
+/* Buttons */
+.event-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+.delete-btn,
+.update-btn,
+.register-btn,
+.attendees-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s;
+}
+
+.delete-btn {
+    background: #dc3545;
+    color: #fff;
+}
+.delete-btn:hover { 
+    background: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+}
+
+.update-btn {
+    background: #2196F3;
+    color: #fff;
+}
+.update-btn:hover { 
+    background: #1976D2;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+}
+
+.register-btn {
+    background: #4CAF50;
+    color: #fff;
+}
+.register-btn:hover { 
+    background: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+}
+
+.attendees-btn {
+    background: #00897B;
+    color: #fff;
+}
+.attendees-btn:hover { 
+    background: #00796B;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 137, 123, 0.4);
+}
+
+.register-btn:disabled,
+.delete-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.register-btn:disabled:hover,
+.delete-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.created-by-you {
+    color: #4CAF50;
+    font-weight: 600;
+    margin: 10px 0;
+    padding: 8px 12px;
+    background: rgba(76, 175, 80, 0.15);
+    border-radius: 6px;
+    display: inline-block;
+    font-size: 13px;
+    border: 1px solid #4CAF50;
+}
+
+.no-events {
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+}
+
+.no-events-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.3;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
     .event-container {
-      max-width: 900px;
-      margin: 40px auto;
-      padding: 20px;
+        padding: 15px;
+        margin: 20px auto;
     }
 
-    .event-card {
-      background-color: #1a1a1a;
-      border-left: 5px solid #4CAF50;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      padding: 20px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-      transition: transform 0.2s;
+    .dynamic-search-box {
+        padding: 20px;
     }
 
-    .event-card:hover {
-      transform: translateY(-3px);
+    .input-group {
+        flex-direction: column;
+    }
+
+    #searchInput,
+    #dateInput {
+        width: 100%;
+    }
+
+    .dropdown-toggle {
+        width: 100%;
+        justify-content: center;
     }
 
     .event-title {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 8px;
+        font-size: 18px;
     }
 
-    .event-meta {
-      color: #aaa;
-      font-size: 14px;
-      margin-bottom: 12px;
+    .event-actions {
+        flex-direction: column;
     }
 
-    .created-by-you {
-      background: #003300;
-      color: #4CAF50;
-      padding: 5px 10px;
-      border-radius: 8px;
-      font-size: 13px;
-      display: inline-block;
-      margin-bottom: 10px;
+    .event-actions > * {
+        width: 100%;
+        text-align: center;
     }
+}
+</style>
+{% endblock %}
 
-    /* Visibility tag */
-    .visibility-tag {
-      font-size: 12px;
-      font-weight: 600;
-      padding: 3px 8px;
-      border-radius: 6px;
-      margin-left: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
+{% block content %}
+<div class="event-container">
 
-    .visibility-tag.public {
-      background-color: #2e7d32; /* Green for public */
-      color: #fff;
-    }
-
-    .visibility-tag.private {
-      background-color: #b71c1c; /* Red for private */
-      color: #fff;
-    }
-
-    /* Buttons */
-    .register-btn,
-    .attendees-btn,
-    .delete-btn,
-    .update-btn {
-      display: inline-block;
-      margin-top: 10px;
-      margin-right: 10px;
-      padding: 10px 18px;
-      background-color: #4CAF50;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-
-    .register-btn:hover,
-    .attendees-btn:hover,
-    .update-btn:hover {
-      background-color: #45a049;
-    }
-
-    .delete-btn {
-      background-color: #d9534f;
-    }
-
-    .delete-btn:hover {
-      background-color: #c9302c;
-    }
-
-    .create-event-btn {
-      background-color: #4CAF50;
-      color: #fff;
-      padding: 10px 16px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 500;
-      transition: background-color 0.3s;
-    }
-
-    .create-event-btn:hover {
-      background-color: #45a049;
-    }
-
-    .logout-btn {
-      background-color: #45a049;
-      color: #fff;
-      padding: 10px 16px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 500;
-      transition: background-color 0.3s;
-    }
-
-    .logout-btn:hover {
-      background-color: #388e3c;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <div class="logo">EventHive</div>
-    <div class="user-info">
-      <span>{{ current_user.username }}</span>
-      <a href="{{ url_for('events.create_event') }}" class="create-event-btn">+ Create Event</a>
-      <a href="{{ url_for('auth.logout') }}" class="logout-btn">Logout</a>
+    <!-- Page Header -->
+    <div class="page-header">
+        <h2>🎉 Discover Events</h2>
+        <p>Find and register for amazing events in your area</p>
     </div>
-  </header>
 
-  <div class="event-container">
-    <h2>All Events</h2>
+    <!-- 🔍 Search Bar -->
+    <form id="searchForm" method="GET">
+        <div class="dynamic-search-box">
+            <div class="search-header">
+                <span class="search-icon">🔍</span>
+                <h3 class="search-title">Search & Filter Events</h3>
+            </div>
 
-    {% if events %}
-      {% for event in events %}
-        <div class="event-card">
-          <div class="event-title">
-            {{ event.title }}
-            <span class="visibility-tag {% if event.visibility == 'private' %}private{% else %}public{% endif %}">
-              {{ event.visibility.value|capitalize }}
-            </span>
-          </div>
+            <div class="search-content" id="searchContent">
+                <div class="input-group">
+                    <input id="searchInput"
+                           type="text"
+                           class="form-control"
+                           placeholder="Enter title...">
 
-          <div class="event-meta">
-            Hosted by <strong>{{ event.creator.username }}</strong> | 
-            Date: {{ event.date.strftime('%d %b %Y') }} | 
-            Location: {{ event.venue }}
-          </div>
+                    <!-- Date Picker (hidden by default) -->
+                    <input id="dateInput"
+                           type="date"
+                           class="form-control"
+                           style="display:none;">
 
-          {% if event.creator.id == current_user.id %}
-            <div class="created-by-you">Created by you</div>
+                    <!-- Search Button -->
+                    <button type="button" id="searchButton" class="btn search-btn">
+                        🔍 Search
+                    </button>
 
-            <form action="{{ url_for('events.delete_event', event_id=event.id) }}" method="POST" style="display:inline;">
-              <button type="submit" class="delete-btn">Delete</button>
-            </form>
+                    <!-- WORKING BOOTSTRAP DROPDOWN -->
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle"
+                                type="button"
+                                id="filtersDropdown"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                            📋 Filters
+                        </button>
 
-            <a href="{{ url_for('events.update_event', event_id=event.id) }}" class="update-btn">Update</a>
+                        <ul class="dropdown-menu" aria-labelledby="filtersDropdown">
+                            <li><a class="dropdown-item filter-option" data-filter="title">📝 Title</a></li>
+                            <li><a class="dropdown-item filter-option" data-filter="organizer">👤 Organizer</a></li>
+                            <li><a class="dropdown-item filter-option" data-filter="tag">🏷️ Tag</a></li>
+                            <li><a class="dropdown-item filter-option" data-filter="location">📍 Location</a></li>
+                            <li><a class="dropdown-item filter-option" data-filter="mode">💻 Mode</a></li>
+                            <li><a class="dropdown-item filter-option" data-filter="date">📅 Date</a></li>
+                            <li>
+                                <a class="dropdown-item filter-option" data-filter="visibility">👁️ Visibility</a>
+                                <ul class="dropdown-submenu">
+                                    <li><a class="dropdown-item visibility-option" data-value="public">🌍 Public</a></li>
+                                    <li><a class="dropdown-item visibility-option" data-value="private">🔒 Private</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
 
-          {% else %}
-            {% if current_user in event.attendees %}
-              <form action="{{ url_for('attendees.unregister_attendee', event_id=event.id) }}" method="POST" style="display:inline;">
-                <button type="submit" class="delete-btn">Unregister</button>
-              </form>
-            {% else %}
-              <form action="{{ url_for('attendees.create_attendee') }}" method="POST" style="display:inline;">
-                <input type="hidden" name="eventId" value="{{ event.id }}">
-                <button type="submit" class="register-btn">Register</button>
-              </form>
-            {% endif %}
-          {% endif %}
-
-          <a href="{{ url_for('attendees.get_attendee', attendee_id=current_user.id, event_id=event.id) }}" class="attendees-btn">
-            View Attendees
-          </a>
+                <!-- Dynamic Tags -->
+                <div id="tagContainer"></div>
+                
+                <!-- Filter Controls -->
+                <div class="filter-controls">
+                    <span class="active-filters-label" id="filterCount">No filters applied</span>
+                    <button type="button" id="clearFilters" class="btn">
+                        🗑️ Clear All
+                    </button>
+                </div>
+            </div>
         </div>
-      {% endfor %}
-    {% else %}
-      <p>No events found.</p>
-    {% endif %}
-  </div>
-</body>
-</html>
+    </form>
+
+    <!-- Events Section -->
+    <div class="events-section">
+        <h2 class="section-title">All Events</h2>
+
+        {% if events %}
+            {% for event in events %}
+            <div class="event-card">
+
+                <div class="event-title">
+                    {{ event.title }}
+                    <span class="visibility-tag {{ 'private' if event.visibility.value=='private' else 'public' }}">
+                        {{ event.visibility.value }}
+                    </span>
+                </div>
+
+                <div class="event-meta">
+                    <strong>Description:</strong> {{ event.description }}<br>
+                    <strong>Hosted by:</strong> {{ event.creator.username }} |
+                    <strong>Date:</strong> {{ event.date.strftime('%d %b %Y') }} |
+                    <strong>Time:</strong> {{ event.starttime.strftime('%I:%M %p') }} - {{ event.endtime.strftime('%I:%M %p') }}<br>
+                    <strong>Location:</strong> {{ event.venue }} |
+                    <strong>Tag:</strong> {{ event.tags.value }} |
+                    <strong>Mode:</strong> {{ event.mode }}
+                </div>
+
+                {% if event.creator.id == current_user.id %}
+                    <div class="created-by-you">✨ Created by you</div>
+                {% endif %}
+
+                <div class="event-actions">
+                    {% if event.creator.id == current_user.id %}
+                        {% if event.visibility.value == 'private' %}
+                            <a href="{{ url_for('events.view_join_requests', event_id=event.id) }}"
+                               class="attendees-btn">View Requests</a>
+                        {% endif %}
+
+                        <form action="{{ url_for('events.delete_event', event_id=event.id) }}"
+                              method="POST"
+                              style="display:inline;">
+                            <button type="submit" class="delete-btn">Delete</button>
+                        </form>
+
+                        <a href="{{ url_for('events.load_update_event_page', event_id=event.id) }}"
+                           class="update-btn">Update</a>
+
+                    {% else %}
+                    <label>
+                    <input type="checkbox" class="notify-checkbox" data-event-id="{{ event.id }}"
+                      {% if event.id in user_notified_event_ids %} checked {% endif %}>
+                       Receive Email Notifications
+                    </label>
+                    <script>
+document.querySelectorAll(".notify-checkbox").forEach(checkbox => {
+    checkbox.addEventListener("change", function() {
+        const eventId = this.dataset.eventId;
+        const enabled = this.checked;
+
+        fetch("/toggle-notification", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ event_id: eventId, enabled: enabled })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert("Error: " + data.error);
+                // revert checkbox if error
+                this.checked = !enabled;
+            } else {
+                console.log(data.message);
+            }
+        })
+        .catch(error => {
+            alert("Network error: " + error);
+            this.checked = !enabled;
+        });
+    });
+});
+</script>
+                        {% set is_registered = current_user in event.attendees %}
+                        {% set attendee_record = current_user.attendee_links|selectattr('event_id','equalto',event.id)|first %}
+
+                        {% if is_registered or attendee_record %}
+                            {% if event.visibility.value == 'public' %}
+                                <form action="{{ url_for('attendees.unregister_attendee', event_id=event.id) }}"
+                                      method="POST"
+                                      style="display:inline;">
+                                    <button type="submit" class="delete-btn">Unregister</button>
+                                </form>
+                            {% else %}
+                                <button class="register-btn" disabled>Already Registered</button>
+                            {% endif %}
+                        {% else %}
+                            {% if event.visibility.value == 'private' %}
+                                {% if event.id in user_requests %}
+                                    {% set status = user_requests[event.id] %}
+                                    {% if status == "pending" %}
+                                        <button class="register-btn" disabled>Request Pending</button>
+                                    {% elif status == "approved" %}
+                                        <button class="register-btn" disabled>Approved</button>
+                                    {% elif status == "rejected" %}
+                                        <button class="delete-btn" disabled>Rejected</button>
+                                    {% endif %}
+                                {% else %}
+                                    <form action="{{ url_for('attendees.create_attendee') }}"
+                                          method="POST"
+                                          style="display:inline;">
+                                        <input type="hidden" name="eventId" value="{{ event.id }}">
+                                        <button type="submit" class="register-btn">Send Request</button>
+                                    </form>
+                                {% endif %}
+                            {% else %}
+                                <form action="{{ url_for('attendees.create_attendee') }}"
+                                      method="POST"
+                                      style="display:inline;">
+                                    <input type="hidden" name="eventId" value="{{ event.id }}">
+                                    <button type="submit" class="register-btn">Register</button>
+                                </form>
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+
+                    <a href="{{ url_for('attendees.get_attendee', event_id=event.id) }}"
+                       class="attendees-btn">View Attendees</a>
+                </div>
+
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-events">
+                <div class="no-events-icon">📭</div>
+                <p>No events found matching your filters.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+let activeFilter = "title";
+const searchForm = document.getElementById("searchForm");
+const searchInput = document.getElementById("searchInput");
+const dateInput = document.getElementById("dateInput");
+const appliedFilters = new Map();
+
+['title', 'organizer', 'tag', 'location', 'mode', 'date', 'visibility'].forEach(filterType => {
+    appliedFilters.set(filterType, new Set());
+});
+
+function updateFilterCount() {
+    let totalFilters = 0;
+    appliedFilters.forEach(values => {
+        totalFilters += values.size;
+    });
+    
+    const filterCount = document.getElementById('filterCount');
+    if (totalFilters === 0) {
+        filterCount.textContent = 'No filters applied';
+    } else {
+        filterCount.textContent = `${totalFilters} filter${totalFilters > 1 ? 's' : ''} applied`;
+    }
+}
+
+document.querySelectorAll(".filter-option").forEach(option => {
+    option.addEventListener("click", (e) => {
+        // Don't process visibility filter here - it has submenu
+        if (option.dataset.filter === "visibility") {
+            e.stopPropagation();
+            return;
+        }
+        
+        activeFilter = option.dataset.filter;
+        
+        if (activeFilter === "date") {
+            searchInput.style.display = "none";
+            dateInput.style.display = "block";
+            dateInput.focus();
+        } else {
+            searchInput.style.display = "block";
+            dateInput.style.display = "none";
+            searchInput.placeholder = `Enter ${activeFilter}...`;
+            searchInput.focus();
+        }
+    });
+});
+
+// Handle visibility submenu options
+document.querySelectorAll(".visibility-option").forEach(option => {
+    option.addEventListener("click", (e) => {
+        e.preventDefault();
+        const value = option.dataset.value;
+        
+        const filterValues = appliedFilters.get("visibility");
+        if (filterValues.has(value)) {
+            alert(`Filter "visibility: ${value}" is already applied.`);
+            return;
+        }
+        
+        addTag("visibility", value);
+    });
+});
+
+searchInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && activeFilter && this.value.trim() !== "") {
+        e.preventDefault();
+        const value = this.value.trim();
+        const filterValues = appliedFilters.get(activeFilter);
+        
+        if (filterValues.has(value)) {
+            alert(`Filter "${activeFilter}: ${value}" is already applied.`);
+            return;
+        }
+        
+        addTag(activeFilter, value);
+        this.value = "";
+    }
+});
+
+// Search button click handler
+document.getElementById("searchButton").addEventListener("click", function() {
+    if (activeFilter && searchInput.value.trim() !== "" && searchInput.style.display !== "none") {
+        const value = searchInput.value.trim();
+        const filterValues = appliedFilters.get(activeFilter);
+        
+        if (filterValues.has(value)) {
+            alert(`Filter "${activeFilter}: ${value}" is already applied.`);
+            return;
+        }
+        
+        addTag(activeFilter, value);
+        searchInput.value = "";
+    }
+});
+
+dateInput.addEventListener("change", function (e) {
+    const value = this.value;
+    
+    if (value) {
+        const filterValues = appliedFilters.get("date");
+        if (filterValues.has(value)) {
+            alert(`Filter "date: ${value}" is already applied.`);
+            return;
+        }
+        
+        addTag("date", value);
+        this.value = "";
+    }
+});
+
+function addTag(type, value) {
+    const tagContainer = document.getElementById("tagContainer");
+    
+    let displayValue = value;
+    if (type === "date") {
+        const dateObj = new Date(value);
+        displayValue = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+    
+    const chip = document.createElement("div");
+    chip.className = "dynamic-tag";
+    chip.textContent = `${type}: ${displayValue}`;
+    chip.dataset.filterType = type;
+    chip.dataset.filterValue = value;
+
+    const hiddenInput = document.createElement("input");
+    hiddenInput.type = "hidden";
+    hiddenInput.name = type;
+    hiddenInput.value = value;
+    hiddenInput.dataset.filterType = type;
+    hiddenInput.dataset.filterValue = value;
+    searchForm.appendChild(hiddenInput);
+
+    const removeBtn = document.createElement("span");
+    removeBtn.innerHTML = "&times;";
+    removeBtn.onclick = () => {
+        chip.remove();
+        hiddenInput.remove();
+        const filterValues = appliedFilters.get(type);
+        filterValues.delete(value);
+        updateFilterCount();
+        applyFilters();
+    };
+
+    chip.appendChild(removeBtn);
+    tagContainer.appendChild(chip);
+    appliedFilters.get(type).add(value);
+    updateFilterCount();
+    applyFilters();
+}
+
+function applyFilters() {
+    searchForm.submit();
+}
+
+document.getElementById("clearFilters").addEventListener("click", () => {
+    document.getElementById("tagContainer").innerHTML = "";
+    const hiddenInputs = searchForm.querySelectorAll('input[type="hidden"]');
+    hiddenInputs.forEach(input => input.remove());
+    
+    appliedFilters.forEach((values, key) => {
+        values.clear();
+    });
+    
+    updateFilterCount();
+    window.location.href = window.location.pathname;
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tagContainer = document.getElementById("tagContainer");
+    
+    ['title', 'organizer', 'tag', 'location', 'mode', 'date', 'visibility'].forEach(filterType => {
+        const values = urlParams.getAll(filterType);
+        
+        values.forEach(value => {
+            if (value) {
+                let displayValue = value;
+                if (filterType === "date") {
+                    const dateObj = new Date(value);
+                    displayValue = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                }
+                
+                const chip = document.createElement("div");
+                chip.className = "dynamic-tag";
+                chip.textContent = `${filterType}: ${displayValue}`;
+                chip.dataset.filterType = filterType;
+                chip.dataset.filterValue = value;
+
+                const hiddenInput = document.createElement("input");
+                hiddenInput.type = "hidden";
+                hiddenInput.name = filterType;
+                hiddenInput.value = value;
+                hiddenInput.dataset.filterType = filterType;
+                hiddenInput.dataset.filterValue = value;
+                searchForm.appendChild(hiddenInput);
+
+                const removeBtn = document.createElement("span");
+                removeBtn.innerHTML = "&times;";
+                removeBtn.onclick = () => {
+                    chip.remove();
+                    hiddenInput.remove();
+                    const filterValues = appliedFilters.get(filterType);
+                    filterValues.delete(value);
+                    
+                    const allValues = urlParams.getAll(filterType);
+                    urlParams.delete(filterType);
+                    
+                    allValues.forEach(v => {
+                        if (v !== value) {
+                            urlParams.append(filterType, v);
+                        }
+                    });
+                    
+                    updateFilterCount();
+                    window.location.search = urlParams.toString();
+                };
+
+                chip.appendChild(removeBtn);
+                tagContainer.appendChild(chip);
+                appliedFilters.get(filterType).add(value);
+            }
+        });
+    });
+    
+    updateFilterCount();
+});
+
+</script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+{% endblock %}

@@ -1,69 +1,555 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome | EventHive</title>
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(120deg, #0a0a0a, #003300);
-      color: #f0f0f0;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      text-align: center;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventHub - Manage Your Events</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    h1 {
-      font-size: 64px;
-      font-weight: 800;
-      color: #4CAF50;
-      margin-bottom: 20px;
-      text-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
-      letter-spacing: 2px;
-    }
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            color: #f0f0f0;
+            background: linear-gradient(120deg, #0a0a0a, #003300);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
 
-    p {
-      font-size: 18px;
-      color: #ccc;
-      margin-bottom: 40px;
-    }
+        /* Navigation */
+        nav {
+            background-color: #111;
+            border-bottom: 2px solid #4CAF50;
+            padding: 15px 40px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
 
-    .login-btn {
-      background-color: #4CAF50;
-      color: #fff;
-      border: none;
-      padding: 14px 32px;
-      font-size: 18px;
-      border-radius: 8px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: background-color 0.3s, transform 0.2s;
-    }
+        .nav-container {
+            max-width: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-    .login-btn:hover {
-      background-color: #45a049;
-      transform: translateY(-3px);
-    }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+            text-decoration: none;
+        }
 
-    footer {
-      position: absolute;
-      bottom: 20px;
-      color: #777;
-      font-size: 14px;
-    }
-  </style>
+        .logo-link {
+            text-decoration: none;
+            color: inherit;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .logo-link:hover {
+            opacity: 0.8;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+
+        .create-event-btn {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+
+        .create-event-btn:hover {
+            background-color: #45a049;
+        }
+
+        /* Circular profile button */
+        .profile-circle {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #111;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            border: 2px solid #4CAF50;
+            transition: 0.3s;
+        }
+
+        .profile-circle:hover {
+            background-color: #45a049;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.6rem 1.5rem;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid #4CAF50;
+        }
+
+        .btn-secondary:hover {
+            background: #4CAF50;
+            color: white;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #111 0%, #1a4d1a 100%);
+            border-bottom: 3px solid #4CAF50;
+            color: white;
+            padding: 6rem 2rem;
+            text-align: center;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            animation: fadeInUp 0.8s ease 0.2s backwards;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.8s ease 0.4s backwards;
+        }
+
+        .btn-large {
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 5rem 2rem;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #f0f0f0;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background-color: rgba(17, 17, 17, 0.8);
+            border-left: 5px solid #4CAF50;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(76, 175, 80, 0.3);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #4CAF50;
+        }
+
+        .feature-card p {
+            color: #ccc;
+            line-height: 1.8;
+        }
+
+        /* Events Preview Section */
+        .events-preview {
+            padding: 5rem 2rem;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .event-card {
+            background-color: rgba(17, 17, 17, 0.8);
+            border-left: 5px solid #4CAF50;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+            transition: transform 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        .event-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .event-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #1a4d1a 0%, #111 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            border-bottom: 2px solid #4CAF50;
+        }
+
+        .event-content {
+            padding: 1.5rem;
+        }
+
+        .event-tag {
+            display: inline-block;
+            background-color: #2e7d32;
+            color: #fff;
+            padding: 0.3rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .event-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            color: #f0f0f0;
+        }
+
+        .event-card p {
+            color: #ccc;
+        }
+
+        .event-meta {
+            display: flex;
+            gap: 1rem;
+            color: #aaa;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        /* CTA Section */
+        .cta {
+            background: linear-gradient(135deg, #111 0%, #1a4d1a 100%);
+            border-top: 3px solid #4CAF50;
+            color: white;
+            padding: 5rem 2rem;
+            text-align: center;
+        }
+
+        .cta h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .cta p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            color: #ccc;
+        }
+
+        /* Footer */
+        footer {
+            background: #111;
+            border-top: 2px solid #4CAF50;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        .footer-links a:hover {
+            opacity: 1;
+            color: #4CAF50;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            nav {
+                padding: 15px 20px;
+            }
+
+            .nav-links {
+                gap: 10px;
+            }
+
+            .create-event-btn {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn-large {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>EventHive</h1>
-  <p>Organize. Attend. Connect — Your world of events starts here.</p>
-  <a href="{{ url_for('auth.login') }}" class="login-btn">Login</a>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">
+                <a href="#" class="logo-link">EventHive</a>
+            </div>
+            <div class="nav-links">
+                <a href="/login" class="create-event-btn">Login</a>
+                <a href="/signup" class="create-event-btn">Sign Up</a>
+            </div>
+        </div>
+    </nav>
 
-  <footer>© 2025 EventHive. All rights reserved.</footer>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Create, Manage & Attend Amazing Events</h1>
+            <p>Join thousands of event organizers and attendees. From workshops to conferences, manage everything with QR-based check-ins and seamless registration.</p>
+            <div class="hero-buttons">
+                <a href="{{ url_for('auth.signup_post') }}" class="btn btn-primary btn-large">Get Started Free</a>
+                <a href="#events" class="btn btn-secondary btn-large">Browse Events</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">Why Choose EventHub?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📅</div>
+                    <h3>Easy Event Creation</h3>
+                    <p>Create public or private events in minutes with customizable details, capacity limits, and venue options.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎫</div>
+                    <h3>QR Code Check-ins</h3>
+                    <p>Generate unique QR codes for each attendee. Quick, contactless check-ins at your events.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Private Events</h3>
+                    <p>Control who joins with join request approval system for exclusive or invite-only events.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Attendance Tracking</h3>
+                    <p>Monitor registrations in real-time and track who actually attended your events.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Online & Offline</h3>
+                    <p>Host virtual webinars or in-person gatherings. Support for both event modes.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏷️</div>
+                    <h3>Smart Categories</h3>
+                    <p>Tag events with 30+ categories from workshops to hackathons, making discovery easy.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Events Preview Section -->
+    <section id="events" class="events-preview">
+        <div class="container">
+            <h2 class="section-title">Upcoming Events</h2>
+            <div class="events-grid">
+                <div class="event-card">
+                    <div class="event-image">🚀</div>
+                    <div class="event-content">
+                        <span class="event-tag">HACKATHON</span>
+                        <h3>AI Innovation Hackathon</h3>
+                        <p>Build the future of AI in 48 hours with amazing prizes and mentorship.</p>
+                        <div class="event-meta">
+                            <span>📍 Online</span>
+                            <span>👥 150 spots</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="event-card">
+                    <div class="event-image">🎨</div>
+                    <div class="event-content">
+                        <span class="event-tag">WORKSHOP</span>
+                        <h3>Creative Design Masterclass</h3>
+                        <p>Learn from industry experts about modern UI/UX design principles.</p>
+                        <div class="event-meta">
+                            <span>📍 Mumbai</span>
+                            <span>👥 50 spots</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="event-card">
+                    <div class="event-image">💼</div>
+                    <div class="event-content">
+                        <span class="event-tag">NETWORKING</span>
+                        <h3>Tech Professionals Meetup</h3>
+                        <p>Connect with fellow developers, designers, and entrepreneurs.</p>
+                        <div class="event-meta">
+                            <span>📍 Bangalore</span>
+                            <span>👥 100 spots</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 3rem;">
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-large">View All Events</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="container">
+            <h2>Ready to Get Started?</h2>
+            <p>Join our community of event organizers and attendees today!</p>
+            <a href="{{ url_for('auth.signup_post') }}" class="btn btn-primary btn-large">Create Free Account</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-links">
+            <a href="/about">About Us</a>
+            <a href="/contact">Contact</a>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
+        </div>
+        <p>&copy; 2025 EventHub. All rights reserved.</p>
+    </footer>
 </body>
 </html>

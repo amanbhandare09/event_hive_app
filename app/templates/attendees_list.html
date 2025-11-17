@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}Event Attendees | EventHive{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(120deg, #0a0a0a, #003300);
+        min-height: 100vh;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .attendees-container {
+        background: rgba(17, 17, 17, 0.9);
+        padding: 2.5rem;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+        border-left: 5px solid #4CAF50;
+        backdrop-filter: blur(10px);
+        width: 100%;
+        max-width: 1200px;
+        margin: 40px auto;
+        color: #f0f0f0;
+    }
+
+    h2 {
+        color: #4CAF50;
+        margin-bottom: 1rem;
+        font-weight: 600;
+        text-align: center;
+        font-size: 28px;
+    }
+
+    h2 strong {
+        color: #fff;
+    }
+
+    .event-info {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .btn-back {
+        background: transparent;
+        border: 2px solid #4CAF50;
+        color: #4CAF50;
+        padding: 10px 24px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        display: inline-block;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s;
+        text-align: center;
+    }
+
+    .btn-back:hover {
+        background: #4CAF50;
+        color: #111;
+        transform: translateY(-2px);
+    }
+
+    .alert-info {
+        background: rgba(76, 175, 80, 0.15);
+        border: 1px solid #4CAF50;
+        border-left: 4px solid #4CAF50;
+        color: #4CAF50;
+        padding: 1.2rem;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .attendees-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1.5rem;
+        overflow: hidden;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    .attendees-table thead {
+        background: rgba(76, 175, 80, 0.2);
+    }
+
+    .attendees-table th,
+    .attendees-table td {
+        padding: 16px;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .attendees-table thead th {
+        color: #4CAF50;
+        font-weight: 600;
+        border-bottom: 2px solid #4CAF50;
+        font-size: 15px;
+    }
+
+    .attendees-table tbody tr {
+        background: rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s;
+    }
+
+    .attendees-table tbody tr:hover {
+        background: rgba(76, 175, 80, 0.15);
+        transform: scale(1.01);
+    }
+
+    .attendee-count {
+        text-align: center;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 15px;
+        margin-top: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stats-container {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin: 1.5rem 0;
+        flex-wrap: wrap;
+    }
+
+    .stat-box {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 1rem 2rem;
+        border-radius: 10px;
+        border: 1px solid rgba(76, 175, 80, 0.3);
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 28px;
+        font-weight: 700;
+        color: #4CAF50;
+        display: block;
+    }
+
+    .stat-label {
+        font-size: 14px;
+        color: #ccc;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 0.3rem;
+    }
+
+    /* Presence Badge */
+    .presence-badge {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .present {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4CAF50;
+        border: 1px solid #4CAF50;
+    }
+
+    .absent {
+        background: rgba(244, 67, 54, 0.2);
+        color: #f44336;
+        border: 1px solid #f44336;
+    }
+
+    .header-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .attendees-container {
+            padding: 1.5rem;
+            margin: 20px 15px;
+        }
+
+        .attendees-table {
+            font-size: 13px;
+        }
+
+        .attendees-table th,
+        .attendees-table td {
+            padding: 12px 8px;
+        }
+
+        h2 {
+            font-size: 22px;
+        }
+
+        .stats-container {
+            gap: 1rem;
+        }
+
+        .stat-box {
+            padding: 0.8rem 1.5rem;
+        }
+
+        .stat-number {
+            font-size: 22px;
+        }
+
+        .header-controls {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="attendees-container">
+    <div class="event-info">
+        <h2>Attendees for: <strong>{{ event.title }}</strong></h2>
+        
+        <div class="stats-container">
+            <div class="stat-box">
+                <span class="stat-number">{{ attendees|length }}</span>
+                <span class="stat-label">Total Registered</span>
+            </div>
+            {% if event.creator.id == current_user.id %}
+                <div class="stat-box">
+                    <span class="stat-number">{{ attendees|selectattr('has_attended', 'equalto', true)|list|length }}</span>
+                    <span class="stat-label">Present</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number">{{ attendees|selectattr('has_attended', 'equalto', false)|list|length }}</span>
+                    <span class="stat-label">Absent</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="header-controls">
+        <a href="{{ url_for('main.profile') }}" class="btn-back">
+            ← Back to Profile
+        </a>
+    </div>
+
+    {% if attendees|length == 0 %}
+        <div class="alert-info">
+            No attendees have registered yet for this event.
+        </div>
+    {% else %}
+        <table class="attendees-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Username</th>
+                    {% if event.creator.id == current_user.id %}
+                        <th>Status</th>
+                        <th>Presence</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for attendee in attendees %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ attendee.user.username }}</td>
+                    {% if event.creator.id == current_user.id %}
+                        <td>
+                            {% if attendee.has_attended %}
+                                <span class="presence-badge present">✓ Present</span>
+                            {% else %}
+                                <span class="presence-badge absent">✗ Absent</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if attendee.has_attended %}
+                                <span style="color: #4CAF50; font-weight: 600;">Attended</span>
+                            {% else %}
+                                <span style="color: #f44336; font-weight: 600;">Not Attended</span>
+                            {% endif %}
+                        </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</div>
+
+{% endblock %}
