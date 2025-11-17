@@ -627,6 +627,41 @@ body {
                            class="update-btn">Update</a>
 
                     {% else %}
+                    <label>
+                    <input type="checkbox" class="notify-checkbox" data-event-id="{{ event.id }}"
+                      {% if event.id in user_notified_event_ids %} checked {% endif %}>
+                       Receive Email Notifications
+                    </label>
+                    <script>
+document.querySelectorAll(".notify-checkbox").forEach(checkbox => {
+    checkbox.addEventListener("change", function() {
+        const eventId = this.dataset.eventId;
+        const enabled = this.checked;
+
+        fetch("/toggle-notification", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ event_id: eventId, enabled: enabled })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert("Error: " + data.error);
+                // revert checkbox if error
+                this.checked = !enabled;
+            } else {
+                console.log(data.message);
+            }
+        })
+        .catch(error => {
+            alert("Network error: " + error);
+            this.checked = !enabled;
+        });
+    });
+});
+</script>
                         {% set is_registered = current_user in event.attendees %}
                         {% set attendee_record = current_user.attendee_links|selectattr('event_id','equalto',event.id)|first %}
 
@@ -914,6 +949,7 @@ window.addEventListener('DOMContentLoaded', () => {
     
     updateFilterCount();
 });
+
 </script>
 
 <!-- Bootstrap JS -->

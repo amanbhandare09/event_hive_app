@@ -7,7 +7,7 @@ from sqlalchemy import or_, and_
 import qrcode
 import json
 from app import db
-from models.model import Event, EventMode, User, event_attendees, EventVisibility, Eventtag, JoinRequest , Attendee
+from models.model import Event, EventMode, User, event_attendees, EventVisibility, Eventtag, JoinRequest , Attendee, EventNotification
 
 main_blueprint = Blueprint("main", __name__)
 events_blueprint = Blueprint("events", __name__)
@@ -146,10 +146,19 @@ def profile():
         for req in JoinRequest.query.filter_by(user_id=current_user.id).all()
     }
 
+    # Fetch events where current user has enabled notifications
+    user_notified_event_ids = [
+        n.event_id for n in EventNotification.query.filter_by(user_id=current_user.id).all()
+    ]
+
+    # Fetch pending private requests if needed
+    user_requests = {}  # optional: populate if using private events
+
     return render_template(
         "profile.html",
         events=events,
-        user_requests=user_requests
+        user_requests=user_requests,
+        user_notified_event_ids=user_notified_event_ids
     )
 
 
@@ -177,46 +186,56 @@ def create_event_page():
     return render_template("create.html")
 
 
-# -------------------------------------
-# CREATE EVENT (POST)
-# -------------------------------------
 @events_blueprint.route("/create", methods=["POST"])
 @login_required
 def create_event():
-
     data = request.get_json() if request.is_json else request.form
 
-    # Safe date parsing
-    date_value = data.get("date")
-    if isinstance(date_value, str) and date_value:
-        date_value = datetime.strptime(date_value, "%Y-%m-%d").date()
+    try:
+        # Date & time
+        try:
+            date_value = datetime.strptime(data.get("date"), "%Y-%m-%d").date() if data.get("date") else None
+        except ValueError:
+            date_value = None
 
-    start_value = data.get("starttime")
-    if isinstance(start_value, str) and start_value:
-        start_value = datetime.strptime(start_value, "%H:%M").time()
+        try:
+            start_value = datetime.strptime(data.get("starttime"), "%H:%M").time() if data.get("starttime") else None
+        except ValueError:
+            start_value = None
 
-    end_value = data.get("endtime")
-    if isinstance(end_value, str) and end_value:
-        end_value = datetime.strptime(end_value, "%H:%M").time()
+        try:
+            end_value = datetime.strptime(data.get("endtime"), "%H:%M").time() if data.get("endtime") else None
+        except ValueError:
+            end_value = None
 
-    event = Event(
-        title=data.get("title"),
-        description=data.get("description"),
-        date=date_value,
-        starttime=start_value,
-        endtime=end_value,
-        mode=EventMode(data["mode"].lower()),
-        visibility=EventVisibility(data["visibility"].lower()),
-        venue=data.get("venue"),
-        capacity=int(data.get("capacity", 100)),
-        organizer_id=current_user.id,
-        tags=Eventtag(data["tags"]),
-    )
+        # Mode & visibility
+        mode_value = (data.get("mode") or "online").lower()
+        visibility_value = (data.get("visibility") or "public").lower()
 
-    db.session.add(event)
-    db.session.commit()
+        # Capacity
+        capacity = int(data.get("capacity") or 100)
 
-    return redirect(url_for("main.profile"))
+        event = Event(
+            title=data.get("title"),
+            description=data.get("description"),
+            date=date_value,
+            starttime=start_value,
+            endtime=end_value,
+            mode=EventMode(mode_value),
+            visibility=EventVisibility(visibility_value),
+            venue=data.get("venue"),
+            capacity=capacity,
+            organizer_id=current_user.id,
+            tags=Eventtag(data.get("tags") or ""),
+        )
+
+        db.session.add(event)
+        db.session.commit()
+        return redirect(url_for("main.profile"))
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 
 # -------------------------------------
@@ -694,3 +713,27 @@ def my_events_page():
         events=events,
         search_query=search_query
     )
+
+@events_blueprint.route("/toggle-notification", methods=["POST"])
+@login_required
+def toggle_notification():
+    data = request.get_json()
+    event_id = data.get("event_id")
+    enabled = data.get("enabled", False)
+
+    if not event_id:
+        return jsonify({"error": "Missing event ID"}), 400
+
+    notif = EventNotification.query.filter_by(user_id=current_user.id, event_id=event_id).first()
+
+    if enabled:
+        if not notif:
+            notif = EventNotification(user_id=current_user.id, event_id=event_id)
+            db.session.add(notif)
+            db.session.commit()
+        return jsonify({"message": f"Notifications enabled for event {event_id}"})
+    else:
+        if notif:
+            db.session.delete(notif)
+            db.session.commit()
+        return jsonify({"message": f"Notifications disabled for event {event_id}"})
