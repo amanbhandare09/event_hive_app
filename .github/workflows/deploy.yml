@@ -1,297 +1,104 @@
-name: Deploy Event Hive Flask App
+name: Deploy Flask Todos App
 
 on:
   push:
-    branches: ["main"]
-  workflow_dispatch: # Allows manual triggering
-
-env:
-  DEPLOY_PATH: ~/event_hive_app
-  TEMP_PATH: ~/event_hive_app_temp
+    branches:
+      - main
+      - develop
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
-    environment: production # Optional: adds approval gates
-    
     steps:
-      # 1️⃣ Checkout repository
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      # 2️⃣ Setup SSH key
-      - name: Setup SSH key
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          pytest --verbose
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
-          
-          # Write key directly and fix any line ending issues
-          echo "$EC2_SSH_KEY" > ~/.ssh/id_rsa
-          
-          # Convert any Windows line endings to Unix
-          sed -i 's/\r$//' ~/.ssh/id_rsa
-          
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          
-          # Show file info for debugging
-          echo "Key file size: $(wc -c < ~/.ssh/id_rsa) bytes"
-          echo "First line: $(head -1 ~/.ssh/id_rsa)"
-          echo "Last line: $(tail -1 ~/.ssh/id_rsa)"
-          
-          # Verify key format
-          if ssh-keygen -l -f ~/.ssh/id_rsa 2>/dev/null; then
-            echo "✅ SSH key is valid"
-          else
-            echo "❌ SSH key validation failed"
-            echo "Attempting to fix key format..."
-            
-            # Try to fix common issues
-            dos2unix ~/.ssh/id_rsa 2>/dev/null || sed -i 's/\r$//' ~/.ssh/id_rsa
-            
-            if ssh-keygen -l -f ~/.ssh/id_rsa 2>/dev/null; then
-              echo "✅ Key fixed and now valid"
-            else
-              echo "❌ Could not fix key format"
-              exit 1
-            fi
-          fi
-        env:
-          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      # 3️⃣ Add EC2 host to known hosts
-      - name: Add EC2 to known hosts
+      - name: Create .env file
         run: |
-          chmod 600 ~/.ssh/id_rsa  # Ensure permissions before any SSH operation
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || {
-            echo "Warning: Could not add host to known_hosts, will use StrictHostKeyChecking=no"
-          }
-
-      # 4️⃣ Debug and test connection
-      - name: Debug connection details
-        run: |
-          echo "Verifying connection parameters..."
-          echo "Username length: ${#EC2_USERNAME}"
-          echo "Host length: ${#EC2_HOST}"
-          
-          # Test DNS resolution
-          if [[ "$EC2_HOST" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "✓ EC2_HOST appears to be an IP address"
-          else
-            echo "EC2_HOST appears to be a hostname, testing DNS..."
-            nslookup "$EC2_HOST" || echo "⚠️ DNS lookup failed"
-          fi
-          
-          # Test ping
-          ping -c 2 "$EC2_HOST" || echo "⚠️ Ping failed (may be blocked by security group)"
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
-      
-      - name: Test SSH connection
-        run: |
-          echo "Attempting SSH connection..."
-          ssh -T -i ~/.ssh/id_rsa \
-            -o StrictHostKeyChecking=no \
-            -o ConnectTimeout=10 \
-            -o ServerAliveInterval=60 \
-            "$EC2_USERNAME@$EC2_HOST" \
-            "echo '✓ SSH connection successful'" || {
-              echo "❌ SSH connection failed"
-              echo "Please check:"
-              echo "1. EC2 instance is running"
-              echo "2. Security group allows SSH from GitHub Actions IPs"
-              echo "3. SSH key matches the one in EC2"
-              exit 1
-            }
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
-
-      # 5️⃣ Create deployment metadata
-      - name: Create deployment info
-        run: |
-          cat > deployment_info.txt << EOF
-          COMMIT_SHA=${{ github.sha }}
-          COMMIT_MESSAGE=$(git log -1 --pretty=%B | head -n 1)
-          DEPLOYED_AT=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-          DEPLOYED_BY=${{ github.actor }}
-          BRANCH=${{ github.ref_name }}
-          WORKFLOW_RUN=${{ github.run_number }}
+          cat > .env << EOF
+          FLASK_ENV=${{ secrets.FLASK_ENV || 'production' }}
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          SQLALCHEMY_DATABASE_URI=${{ secrets.SQLALCHEMY_DATABASE_URI || 'sqlite:///todos.db' }}
           EOF
-          cat deployment_info.txt
 
-      # 6️⃣ Prepare EC2 environment
-      - name: Prepare EC2 environment
-        run: |
-          ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            "$EC2_USERNAME@$EC2_HOST" << 'EOF'
-            set -e
-            echo "Creating temporary deployment directory..."
-            mkdir -p ${{ env.TEMP_PATH }}
-            
-            echo "Checking if app directory exists..."
-            if [ -d "${{ env.DEPLOY_PATH }}" ]; then
-              echo "✓ Existing app directory found"
-            else
-              echo "Creating new app directory..."
-              mkdir -p ${{ env.DEPLOY_PATH }}
-            fi
-          EOF
+      - name: Copy files to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
-
-      # 7️⃣ Upload project files to EC2
-      - name: Upload project files
         run: |
-          echo "Uploading files to EC2..."
-          rsync -avz --delete \
-            --exclude='.git' \
+          # Create temporary directory on EC2
+          ssh $EC2_USERNAME@$EC2_HOST "mkdir -p /home/ubuntu/todos-deploy"
+          
+          # Copy files
+          rsync -avz --exclude='.git' \
             --exclude='.github' \
             --exclude='__pycache__' \
             --exclude='*.pyc' \
-            --exclude='*.pyo' \
             --exclude='.pytest_cache' \
-            --exclude='.env.local' \
             --exclude='venv' \
-            --exclude='node_modules' \
-            --exclude='.DS_Store' \
-            --exclude='*.log' \
-            -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
-            ./ \
-            "$EC2_USERNAME@$EC2_HOST:${{ env.TEMP_PATH }}/"
-          
-          echo "✓ Files uploaded successfully"
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./ $EC2_USERNAME@$EC2_HOST:/home/ubuntu/todos-deploy/
+
+      - name: Deploy application
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
-
-      # 8️⃣ Run deploy script on EC2
-      - name: Run deploy script
         run: |
-          ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            "$EC2_USERNAME@$EC2_HOST" << 'EOF'
-            set -e
+          ssh $EC2_USERNAME@$EC2_HOST << 'ENDSSH'
+            cd /home/ubuntu/todos-deploy
+            chmod +x deploy.sh
+            sudo ./deploy.sh
             
-            echo "Making deploy script executable..."
-            chmod +x ${{ env.TEMP_PATH }}/deploy.sh
-            
-            echo "Running deployment script..."
-            cd ${{ env.TEMP_PATH }}
-            bash deploy.sh
-            
-            echo "✓ Deployment script completed"
-          EOF
+            # Clean up temporary directory
+            cd /home/ubuntu
+            rm -rf todos-deploy
+          ENDSSH
+
+      - name: Health check
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
-
-      # 9️⃣ Health check
-      - name: Health check
         run: |
           echo "Waiting for application to start..."
-          sleep 15
+          sleep 10
           
-          echo "Performing health check..."
-          MAX_RETRIES=5
-          RETRY_COUNT=0
+          # Check if application is responding
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://$EC2_HOST || echo "000")
           
-          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-            if curl -f -s -o /dev/null -w "%{http_code}" "http://$EC2_HOST:5000/health" | grep -q "200"; then
-              echo "✓ Health check passed"
-              exit 0
-            else
-              RETRY_COUNT=$((RETRY_COUNT + 1))
-              echo "Health check attempt $RETRY_COUNT/$MAX_RETRIES failed, retrying..."
-              sleep 5
-            fi
-          done
-          
-          echo "⚠️ Warning: Health check failed after $MAX_RETRIES attempts"
-          echo "The application may still be starting up. Please verify manually."
-          # Don't fail the workflow, just warn
-          exit 0
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
+            echo "Application is healthy! HTTP $HTTP_CODE"
+          else
+            echo "Application may not be responding properly. HTTP $HTTP_CODE"
+            exit 1
+          fi
 
-      # 🔟 Cleanup temp directory
-      - name: Cleanup temporary files
+      - name: Clean up SSH key
         if: always()
-        run: |
-          ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            "$EC2_USERNAME@$EC2_HOST" \
-            "rm -rf ${{ env.TEMP_PATH }}" || true
-          
-          echo "✓ Cleanup completed"
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
-
-      # 1️⃣1️⃣ Deployment summary
-      - name: Deployment summary
-        if: success()
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🎉 DEPLOYMENT SUCCESSFUL"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📦 Commit: ${{ github.sha }}"
-          echo "👤 Deployed by: ${{ github.actor }}"
-          echo "🌿 Branch: ${{ github.ref_name }}"
-          echo "🔗 Application URL: http://$EC2_HOST:5000"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-
-      # 1️⃣2️⃣ Show error logs on failure
-      - name: Show deployment errors
-        if: failure()
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "❌ DEPLOYMENT FAILED - Fetching error logs"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          
-          chmod 600 ~/.ssh/id_rsa
-          
-          ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            "$EC2_USERNAME@$EC2_HOST" << 'EOF' || true
-            echo "=== Service Status ==="
-            sudo systemctl status eventhive --no-pager -l || true
-            
-            echo ""
-            echo "=== Last 30 lines of service logs ==="
-            sudo journalctl -u eventhive -n 30 --no-pager || true
-            
-            echo ""
-            echo "=== Nginx Error Log ==="
-            sudo tail -20 /var/log/nginx/event_hive_error.log 2>/dev/null || echo "No nginx logs found"
-          EOF
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
-
-      # 1️⃣3️⃣ Rollback on failure
-      - name: Rollback on failure
-        if: failure()
-        run: |
-          echo "❌ Deployment failed, initiating rollback..."
-          
-          # Ensure SSH key has correct permissions
-          chmod 600 ~/.ssh/id_rsa
-          
-          ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            "$EC2_USERNAME@$EC2_HOST" << 'EOF'
-            set -e
-            
-            # Remove failed deployment
-            rm -rf ${{ env.TEMP_PATH }}
-            
-            # Restart the service to use the previous version
-            if [ -f "${{ env.DEPLOY_PATH }}/deploy.sh" ]; then
-              cd ${{ env.DEPLOY_PATH }}
-              bash deploy.sh || echo "Could not restart service"
-            fi
-            
-            echo "⚠️ Rollback attempt completed"
-          EOF
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+        run: rm -f ~/.ssh/id_rsa
