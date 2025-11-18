@@ -32,8 +32,8 @@ jobs:
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
           ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "mkdir -p ~/event_hive_app_temp"
           
-          # Upload files
-          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r ./ \
+          # Upload all files, including hidden ones, using rsync
+          rsync -avz -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" ./ \
           ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/event_hive_app_temp/
 
       # 5️⃣ Run deploy.sh on EC2
