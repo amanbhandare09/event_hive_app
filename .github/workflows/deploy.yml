@@ -24,26 +24,25 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           
-          # Decode base64 key (if encoded) or use directly
-          if echo "${{ secrets.EC2_SSH_KEY }}" | base64 -d > /dev/null 2>&1; then
-            echo "Detected base64 encoded key, decoding..."
-            echo "${{ secrets.EC2_SSH_KEY }}" | base64 -d > ~/.ssh/id_rsa
-          else
-            echo "Using key directly..."
-            echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          fi
+          # Always decode from base64
+          echo "Decoding SSH key from base64..."
+          echo "${{ secrets.EC2_SSH_KEY }}" | base64 -d > ~/.ssh/id_rsa
           
           chmod 600 ~/.ssh/id_rsa
           
+          # Show file info for debugging
+          echo "Key file size: $(wc -c < ~/.ssh/id_rsa) bytes"
+          echo "First line: $(head -1 ~/.ssh/id_rsa)"
+          echo "Last line: $(tail -1 ~/.ssh/id_rsa)"
+          
           # Verify key format
-          if ! ssh-keygen -l -f ~/.ssh/id_rsa > /dev/null 2>&1; then
-            echo "Error: Invalid SSH key format"
-            echo "Key fingerprint check failed"
+          if ssh-keygen -l -f ~/.ssh/id_rsa 2>/dev/null; then
+            echo "✅ SSH key is valid"
+          else
+            echo "❌ SSH key validation failed"
+            echo "This might be a key format issue"
             exit 1
           fi
-          
-          echo "✅ SSH key setup successful"
-          ssh-keygen -l -f ~/.ssh/id_rsa
 
       # 3️⃣ Add EC2 host to known hosts
       - name: Add EC2 to known hosts
