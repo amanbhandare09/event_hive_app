@@ -88,107 +88,107 @@ jobs:
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "✅ Image pushed successfully!"
 
-  # Job 3: Deploy to AWS Elastic Beanstalk
-  deploy-elastic-beanstalk:
-    name: Deploy to Elastic Beanstalk
+  # # Job 3: Deploy to AWS Elastic Beanstalk
+  # deploy-elastic-beanstalk:
+  #   name: Deploy to Elastic Beanstalk
+  #   runs-on: ubuntu-latest
+  #   needs: build-and-push
+    
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: ${{ env.AWS_REGION }}
+
+  #     - name: Create Dockerrun.aws.json
+  #       run: |
+  #         cat > Dockerrun.aws.json <<EOF
+  #         {
+  #           "AWSEBDockerrunVersion": "1",
+  #           "Image": {
+  #             "Name": "${{ needs.build-and-push.outputs.image }}",
+  #             "Update": "true"
+  #           },
+  #           "Ports": [
+  #             {
+  #               "ContainerPort": 5000,
+  #               "HostPort": 80
+  #             }
+  #           ],
+  #           "Environment": [
+  #             {
+  #               "Name": "FLASK_APP",
+  #               "Value": "app"
+  #             }
+  #           ]
+  #         }
+  #         EOF
+
+  #     - name: Generate deployment package
+  #       run: |
+  #         zip -r deploy.zip Dockerrun.aws.json .ebextensions || zip -r deploy.zip Dockerrun.aws.json
+
+  #     - name: Deploy to Elastic Beanstalk
+  #       uses: einaregilsson/beanstalk-deploy@v22
+  #       with:
+  #         aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         application_name: ${{ env.EB_APPLICATION_NAME }}
+  #         environment_name: ${{ env.EB_ENVIRONMENT_NAME }}
+  #         version_label: ${{ github.sha }}
+  #         region: ${{ env.AWS_REGION }}
+  #         deployment_package: deploy.zip
+  #         wait_for_environment_recovery: 300
+
+  #     - name: Deployment Success
+  #       run: |
+  #         echo "🎉 Deployment completed successfully!"
+  #         echo "Application URL: http://${{ env.EB_ENVIRONMENT_NAME }}.elasticbeanstalk.com"
+
+  # Alternative: Deploy to EC2 (Uncomment if using EC2 instead)
+  deploy-ec2:
+    name: Deploy to EC2
     runs-on: ubuntu-latest
     needs: build-and-push
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@master
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Create Dockerrun.aws.json
-        run: |
-          cat > Dockerrun.aws.json <<EOF
-          {
-            "AWSEBDockerrunVersion": "1",
-            "Image": {
-              "Name": "${{ needs.build-and-push.outputs.image }}",
-              "Update": "true"
-            },
-            "Ports": [
-              {
-                "ContainerPort": 5000,
-                "HostPort": 80
-              }
-            ],
-            "Environment": [
-              {
-                "Name": "FLASK_APP",
-                "Value": "app"
-              }
-            ]
-          }
-          EOF
-
-      - name: Generate deployment package
-        run: |
-          zip -r deploy.zip Dockerrun.aws.json .ebextensions || zip -r deploy.zip Dockerrun.aws.json
-
-      - name: Deploy to Elastic Beanstalk
-        uses: einaregilsson/beanstalk-deploy@v22
-        with:
-          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          application_name: ${{ env.EB_APPLICATION_NAME }}
-          environment_name: ${{ env.EB_ENVIRONMENT_NAME }}
-          version_label: ${{ github.sha }}
-          region: ${{ env.AWS_REGION }}
-          deployment_package: deploy.zip
-          wait_for_environment_recovery: 300
-
-      - name: Deployment Success
-        run: |
-          echo "🎉 Deployment completed successfully!"
-          echo "Application URL: http://${{ env.EB_ENVIRONMENT_NAME }}.elasticbeanstalk.com"
-
-  # Alternative: Deploy to EC2 (Uncomment if using EC2 instead)
-  # deploy-ec2:
-  #   name: Deploy to EC2
-  #   runs-on: ubuntu-latest
-  #   needs: build-and-push
-  #   
-  #   steps:
-  #     - name: Deploy to EC2 via SSH
-  #       uses: appleboy/ssh-action@master
-  #       with:
-  #         host: ${{ secrets.EC2_HOST }}
-  #         username: ${{ secrets.EC2_USER }}
-  #         key: ${{ secrets.EC2_SSH_KEY }}
-  #         script: |
-  #           cd /home/ubuntu/eventhive
-  #           
-  #           # Pull latest code
-  #           git pull origin main
-  #           
-  #           # Login to ECR and pull new image
-  #           aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
-  #           docker pull ${{ needs.build-and-push.outputs.image }}
-  #           
-  #           # Stop old container
-  #           docker stop eventhive || true
-  #           docker rm eventhive || true
-  #           
-  #           # Run new container
-  #           docker run -d \
-  #             --name eventhive \
-  #             -p 80:5000 \
-  #             --env-file .env \
-  #             --restart unless-stopped \
-  #             ${{ needs.build-and-push.outputs.image }}
-  #           
-  #           # Clean up old images
-  #           docker image prune -f
-  #           
-  #           echo "✅ Deployment completed!"
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/eventhive
+            
+            # Pull latest code
+            git pull origin main
+            
+            # Login to ECR and pull new image
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+            docker pull ${{ needs.build-and-push.outputs.image }}
+            
+            # Stop old container
+            docker stop eventhive || true
+            docker rm eventhive || true
+            
+            # Run new container
+            docker run -d \
+              --name eventhive \
+              -p 80:5000 \
+              --env-file .env \
+              --restart unless-stopped \
+              ${{ needs.build-and-push.outputs.image }}
+            
+            # Clean up old images
+            docker image prune -f
+            
+            echo "✅ Deployment completed!"
 
   # Alternative: Deploy to ECS (Uncomment if using ECS instead)
   # deploy-ecs:
