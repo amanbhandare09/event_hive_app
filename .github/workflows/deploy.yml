@@ -31,7 +31,7 @@ jobs:
         scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r ./* \
         ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/event_hive_app_temp/
 
-    # 5️⃣ Run deploy.sh on EC2
+    # 5️⃣ Run deploy.sh on EC2 (root directory)
     - name: Run deploy script
       run: |
         ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
