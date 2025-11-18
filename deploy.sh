@@ -1,61 +1,83 @@
 #!/bin/bash
 
-echo "deleting old app"
-sudo rm -rf /var/www/
+APP_DIR="/var/www/event_hive_app"
 
-echo "creating app folder"
-sudo mkdir -p /var/www/langchain-app 
+echo "Deleting old app"
+sudo rm -rf $APP_DIR
 
-echo "moving files to app folder"
-sudo mv  * /var/www/langchain-app
+echo "Creating app directory"
+sudo mkdir -p $APP_DIR
 
-# Navigate to the app directory
-cd /var/www/langchain-app/
-sudo mv env .env
+echo "Copying new files"
+sudo cp -r . $APP_DIR
 
-sudo apt-get update
-echo "installing python and pip"
-sudo apt-get install -y python3 python3-pip
+cd $APP_DIR
 
-# Install application dependencies from requirements.txt
-echo "Install application dependencies from requirements.txt"
-sudo pip install -r requirements.txt
-
-# Update and install Nginx if not already installed
-if ! command -v nginx > /dev/null; then
-    echo "Installing Nginx"
-    sudo apt-get update
-    sudo apt-get install -y nginx
+# Rename env file to .env if exists
+if [ -f env ]; then
+    sudo mv env .env
 fi
 
-# Configure Nginx to act as a reverse proxy if not already configured
-if [ ! -f /etc/nginx/sites-available/myapp ]; then
-    sudo rm -f /etc/nginx/sites-enabled/default
-    sudo bash -c 'cat > /etc/nginx/sites-available/myapp <<EOF
+echo "Installing Python & pip"
+sudo apt-get update -y
+sudo apt-get install -y python3 python3-pip python3-venv
+
+echo "Creating venv"
+python3 -m venv venv
+source venv/bin/activate
+
+echo "Installing dependencies"
+pip install --upgrade pip
+pip install -r requirements.txt
+
+echo "Installing Nginx (if missing)"
+sudo apt-get install -y nginx
+
+# -------------------- NGINX CONFIG --------------------
+NGINX_CONF="/etc/nginx/sites-available/event_hive_app"
+
+sudo bash -c "cat > $NGINX_CONF" <<EOF
 server {
     listen 80;
     server_name _;
 
     location / {
         include proxy_params;
-        proxy_pass http://unix:/var/www/langchain-app/myapp.sock;
+        proxy_pass http://unix:/var/www/event_hive_app/app.sock;
     }
 }
-EOF'
+EOF
 
-    sudo ln -s /etc/nginx/sites-available/myapp /etc/nginx/sites-enabled
-    sudo systemctl restart nginx
-else
-    echo "Nginx reverse proxy configuration already exists."
-fi
+sudo ln -sf $NGINX_CONF /etc/nginx/sites-enabled/
+sudo systemctl restart nginx
 
-# Stop any existing Gunicorn process
-sudo pkill gunicorn
-sudo rm -rf myapp.sock
+# -------------------- STOP PREVIOUS GUNICORN --------------------
+echo "Stopping old Gunicorn"
+sudo pkill -f gunicorn || true
+sudo rm -f app.sock
 
-# # Start Gunicorn with the Flask application
-# # Replace 'server:app' with 'yourfile:app' if your Flask instance is named differently.
-# # gunicorn --workers 3 --bind 0.0.0.0:8000 server:app &
-echo "starting gunicorn"
-sudo gunicorn --workers 3 --bind unix:myapp.sock  server:app --user www-data --group www-data --daemon
-echo "started gunicorn 🚀"
+# -------------------- START GUNICORN --------------------
+echo "Starting Gunicorn"
+
+sudo bash -c "cat > /etc/systemd/system/eventhive.service" <<EOF
+[Unit]
+Description=Event Hive Flask App
+After=network.target
+
+[Service]
+User=www-data
+WorkingDirectory=$APP_DIR
+Environment="PATH=$APP_DIR/venv/bin"
+ExecStart=$APP_DIR/venv/bin/gunicorn --workers 3 --bind unix:app.sock event_hive_app:app
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable eventhive
+sudo systemctl restart eventhive
+
+echo "Deployment Completed Successfully 🚀"
