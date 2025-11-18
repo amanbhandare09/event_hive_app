@@ -1,6 +1,7 @@
+from asyncio.log import logger
 import os
 import secrets
-from flask import Blueprint, current_app, flash, jsonify, redirect, request, render_template, url_for
+from flask import Blueprint, app, current_app, flash, jsonify, redirect, request, render_template, url_for
 from datetime import datetime
 from flask_login import current_user, login_required
 from sqlalchemy import or_, and_
@@ -8,6 +9,7 @@ import qrcode
 import json
 from app import db
 from models.model import Event, EventMode, User, event_attendees, EventVisibility, Eventtag, JoinRequest , Attendee, EventNotification
+from app.llm_service import ask_gemma
 
 main_blueprint = Blueprint("main", __name__)
 events_blueprint = Blueprint("events", __name__)
@@ -329,6 +331,51 @@ def delete_event(event_id):
     db.session.commit()
 
     return redirect(url_for("main.profile"))
+    
+
+
+@events_blueprint.route("/chatbot", methods=["POST"])
+def chatbot():
+    # 1. Validate Input
+    data = request.get_json()
+    question = data.get("question", "").strip()
+    
+    if not question:
+        return jsonify({"answer": "Please ask a question."}), 400
+
+    # 2. Retrieve Events (Optimized)
+    # NOTE: 'Event' must be imported from your models file (e.g., from .models import Event)
+    try:
+        events = Event.query.all()
+    except Exception as e:
+        logger.error(f"Database Error: {e}")
+        return jsonify({"answer": "⚠️ Database connection failed."}), 500
+
+    # 3. Build Context Efficiently (Using List Join)
+    # Using += for strings in a loop is slow; lists are faster for large datasets.
+    context_lines = []
+    if not events:
+        context_lines.append("No events are currently scheduled.")
+    else:
+        for e in events:
+            # Formatting explicitly to save tokens and improve readability for AI
+            context_lines.append(
+                f"ID: {e.id} | Title: {e.title} | Date: {e.date} {e.starttime}-{e.endtime} | "
+                f"Venue: {e.venue} | Desc: {e.description}"
+            )
+    
+    event_context = "\n".join(context_lines)
+
+    # 4. Get AI Response
+    
+    answer = ask_gemma(question, event_context)
+
+    return jsonify({"answer": answer})
+
+@events_blueprint.route("/chat")
+def chat_page():
+    return render_template("chatbot.html")
+
 
 
 @attendees_blueprint.route('/event/<int:event_id>/scan', methods=["GET"])
