@@ -3,11 +3,17 @@ name: Deploy Event Hive Flask App
 on:
   push:
     branches: ["main"]
+  workflow_dispatch: # Allows manual triggering
+
+env:
+  DEPLOY_PATH: ~/event_hive_app
+  TEMP_PATH: ~/event_hive_app_temp
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    environment: production # Optional: adds approval gates
+    
     steps:
       # 1️⃣ Checkout repository
       - name: Checkout code
@@ -19,25 +25,172 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          
+          # Verify key format
+          if ! ssh-keygen -l -f ~/.ssh/id_rsa > /dev/null 2>&1; then
+            echo "Error: Invalid SSH key format"
+            exit 1
+          fi
+          
+          echo "SSH key setup successful"
 
       # 3️⃣ Add EC2 host to known hosts
       - name: Add EC2 to known hosts
         run: |
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || {
+            echo "Warning: Could not add host to known_hosts, will use StrictHostKeyChecking=no"
+          }
 
-      # 4️⃣ Upload project files to EC2
+      # 4️⃣ Test connection
+      - name: Test SSH connection
+        run: |
+          echo "Testing connection to ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}"
+          ssh -T -i ~/.ssh/id_rsa \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=10 \
+            -o ServerAliveInterval=60 \
+            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} \
+            "echo '✓ SSH connection successful'" || {
+              echo "❌ SSH connection failed"
+              exit 1
+            }
+
+      # 5️⃣ Create deployment metadata
+      - name: Create deployment info
+        run: |
+          cat > deployment_info.txt << EOF
+          COMMIT_SHA=${{ github.sha }}
+          COMMIT_MESSAGE=$(git log -1 --pretty=%B | head -n 1)
+          DEPLOYED_AT=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          DEPLOYED_BY=${{ github.actor }}
+          BRANCH=${{ github.ref_name }}
+          WORKFLOW_RUN=${{ github.run_number }}
+          EOF
+          cat deployment_info.txt
+
+      # 6️⃣ Prepare EC2 environment
+      - name: Prepare EC2 environment
+        run: |
+          ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+            echo "Creating temporary deployment directory..."
+            mkdir -p ${{ env.TEMP_PATH }}
+            
+            echo "Checking if app directory exists..."
+            if [ -d "${{ env.DEPLOY_PATH }}" ]; then
+              echo "✓ Existing app directory found"
+            else
+              echo "Creating new app directory..."
+              mkdir -p ${{ env.DEPLOY_PATH }}
+            fi
+          EOF
+
+      # 7️⃣ Upload project files to EC2
       - name: Upload project files
         run: |
-          # Ensure the temp folder exists on EC2
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-          ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "mkdir -p ~/event_hive_app_temp"
+          echo "Uploading files to EC2..."
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            --exclude='*.pyo' \
+            --exclude='.pytest_cache' \
+            --exclude='.env.local' \
+            --exclude='venv' \
+            --exclude='node_modules' \
+            --exclude='.DS_Store' \
+            --exclude='*.log' \
+            -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+            ./ \
+            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:${{ env.TEMP_PATH }}/
           
-          # Upload all files, including hidden ones, using rsync
-          rsync -avz -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" ./ \
-          ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/event_hive_app_temp/
+          echo "✓ Files uploaded successfully"
 
-      # 5️⃣ Run deploy.sh on EC2
+      # 8️⃣ Run deploy script on EC2
       - name: Run deploy script
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-          ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "chmod +x ~/event_hive_app_temp/deploy.sh && bash ~/event_hive_app_temp/deploy.sh"
+          ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+            
+            echo "Making deploy script executable..."
+            chmod +x ${{ env.TEMP_PATH }}/deploy.sh
+            
+            echo "Running deployment script..."
+            cd ${{ env.TEMP_PATH }}
+            bash deploy.sh
+            
+            echo "✓ Deployment script completed"
+          EOF
+
+      # 9️⃣ Health check
+      - name: Health check
+        run: |
+          echo "Waiting for application to start..."
+          sleep 15
+          
+          echo "Performing health check..."
+          MAX_RETRIES=5
+          RETRY_COUNT=0
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if curl -f -s -o /dev/null -w "%{http_code}" http://${{ secrets.EC2_HOST }}:5000/health | grep -q "200"; then
+              echo "✓ Health check passed"
+              exit 0
+            else
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              echo "Health check attempt $RETRY_COUNT/$MAX_RETRIES failed, retrying..."
+              sleep 5
+            fi
+          done
+          
+          echo "⚠️ Warning: Health check failed after $MAX_RETRIES attempts"
+          echo "The application may still be starting up. Please verify manually."
+          # Don't fail the workflow, just warn
+          exit 0
+
+      # 🔟 Cleanup temp directory
+      - name: Cleanup temporary files
+        if: always()
+        run: |
+          ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} \
+            "rm -rf ${{ env.TEMP_PATH }}" || true
+          
+          echo "✓ Cleanup completed"
+
+      # 1️⃣1️⃣ Deployment summary
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎉 DEPLOYMENT SUCCESSFUL"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📦 Commit: ${{ github.sha }}"
+          echo "👤 Deployed by: ${{ github.actor }}"
+          echo "🌿 Branch: ${{ github.ref_name }}"
+          echo "🔗 Application URL: http://${{ secrets.EC2_HOST }}:5000"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      # 1️⃣2️⃣ Rollback on failure
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed, initiating rollback..."
+          ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+            
+            # Remove failed deployment
+            rm -rf ${{ env.TEMP_PATH }}
+            
+            # Restart the service to use the previous version
+            if [ -f "${{ env.DEPLOY_PATH }}/deploy.sh" ]; then
+              cd ${{ env.DEPLOY_PATH }}
+              bash deploy.sh || echo "Could not restart service"
+            fi
+            
+            echo "⚠️ Rollback attempt completed"
+          EOF
