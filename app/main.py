@@ -39,6 +39,7 @@ def user_profile():
     Display the user's personal profile with tabs showing:
     - Events they registered for (attending_events)
     - Events they created (created_events)
+    - Archived events count
     """
     # Get current user with all necessary relationships
     user = User.query.options(
@@ -47,7 +48,39 @@ def user_profile():
         db.joinedload(User.attendee_links)
     ).get(current_user.id)
     
-    return render_template("user_profile.html", user=user)
+    # Get archived events count
+    archived_count = Event.query.filter_by(
+        organizer_id=current_user.id,
+        is_archived=True
+    ).count()
+    
+    # ✅ FIX: Filter out archived events from attending_events
+    active_attending_events = [
+        event for event in user.attending_events 
+        if not event.is_archived
+    ]
+    
+    # ✅ FIX: Filter out archived events from created_events
+    active_created_events = [
+        event for event in user.created_events 
+        if not event.is_archived
+    ]
+    
+    # # ✅ NEW: Get saved events
+    # saved_events_query = Event.query.join(SavedEvent).filter(
+    #     SavedEvent.user_id == current_user.id,
+    #     Event.is_archived == False
+    # ).all()
+    
+    return render_template(
+        "user_profile.html", 
+        user=user, 
+        archived_count=archived_count,
+        active_attending_events=active_attending_events,
+        active_created_events=active_created_events,
+        # saved_events=saved_events_query
+    )
+
 
 @main_blueprint.route('/profile', methods=['GET'])
 @login_required
@@ -55,14 +88,7 @@ def profile():
     """
     Display all events with dynamic filtering support
     Supports multiple filters of the same type: title, organizer, tag, location, mode, date, visibility
-    """
-    
-    # DEBUG: Print received parameters
-    # print("=" * 50)
-    # print("DEBUG - Received URL parameters:")
-    # print(f"request.args: {request.args}")
-    # print("=" * 50)
-    
+    """    
     # Collect filter parameters - now supports multiple values per filter type
     filters = {
         "title": request.args.getlist("title"),
@@ -73,17 +99,10 @@ def profile():
         "date": request.args.getlist("date"),
         "visibility": request.args.getlist("visibility"),
     }
-    
-    # DEBUG: Print parsed filters
-    #print("DEBUG - Parsed filters:")
-    for key, values in filters.items():
-        if values:
-            pass
-           # print(f"  {key}: {values}")
-    #print("=" * 50)
 
     # Base query
-    query = Event.query
+    # query = Event.query
+    query = Event.query.filter_by(is_archived=False)
 
     # Apply filters with OR logic for multiple values of same type
     if filters["title"]:
@@ -158,14 +177,22 @@ def profile():
         n.event_id for n in EventNotification.query.filter_by(user_id=current_user.id).all()
     ]
 
-    # Fetch pending private requests if needed
-    user_requests = {}  # optional: populate if using private events
-
+    
+    # 2. CALCULATE THE ARCHIVED COUNT
+    # Query all events where is_archived is True for the current user (organizer)
+    archived_count = db.session.scalar(
+        db.select(db.func.count()).where(
+            Event.organizer_id == current_user.id,
+            Event.is_archived == True
+        )
+    )
+    
     return render_template(
         "profile.html",
         events=events,
         user_requests=user_requests,
-        user_notified_event_ids=user_notified_event_ids
+        user_notified_event_ids=user_notified_event_ids,
+        archived_count=archived_count 
     )
 
 
@@ -174,7 +201,7 @@ def profile():
 # -------------------------------------
 @events_blueprint.route("/", methods=["GET"])
 def list_events():
-    events = Event.query.all()
+    events = Event.query.filter_by(is_archived=False).all()
 
     user_requests = {}
     if current_user.is_authenticated:
@@ -673,7 +700,8 @@ def live_events():
     live_events = Event.query.filter(
         Event.date == today,
         Event.starttime <= current_time,
-        Event.endtime >= current_time
+        Event.endtime >= current_time,
+        Event.is_archived == False
     ).all()
 
     return render_template("live.html", events=live_events, now=now)
@@ -750,3 +778,95 @@ def toggle_notification():
             db.session.delete(notif)
             db.session.commit()
         return jsonify({"message": f"Notifications disabled for event {event_id}"})
+
+
+# -------------------------------------
+# VIEW ARCHIVED EVENTS
+# -------------------------------------
+@events_blueprint.route("/archives", methods=["GET"])
+@login_required
+def view_archives():
+    """View all archived events created by current user"""
+    archived_events = Event.query.filter_by(
+        organizer_id=current_user.id,
+        is_archived=True
+    ).order_by(Event.date.desc()).all()
+
+    return render_template("archives.html", events=archived_events)
+
+
+# -------------------------------------
+# RECREATE EVENT FROM ARCHIVE
+# -------------------------------------
+@events_blueprint.route("/recreate/<int:event_id>", methods=["GET"])
+@login_required
+def recreate_from_archive(event_id):
+    """Load archived event data into a NEW recreation form"""
+    event = Event.query.get_or_404(event_id)
+
+    # Only organizer can recreate their own events
+    if event.organizer_id != current_user.id:
+        flash("You are not authorized to recreate this event!", "danger")
+        return redirect(url_for("events.view_archives"))
+
+    # Must be archived
+    if not event.is_archived:
+        flash("This event is not archived!", "warning")
+        return redirect(url_for("main.profile"))
+
+    # Render NEW recreate form with event data
+    # Pass 'now' variable for date validation
+    return render_template("recreate.html", event=event, now=datetime.now())
+
+@events_blueprint.route("/recreate/<int:event_id>", methods=["POST"])
+@login_required
+def process_recreation(event_id):
+    """Process recreation of archived event"""
+    archived_event = Event.query.get_or_404(event_id)
+
+    # Security check
+    if archived_event.organizer_id != current_user.id:
+        flash("Unauthorized!", "danger")
+        return redirect(url_for("events.view_archives"))
+
+    try:
+        # Validate request data (support both JSON and form)
+        if request.is_json:
+            data = validate_json(EventCreateUpdateSchema)
+        else:
+            data = validate_form(EventCreateUpdateSchema)
+
+        # Create NEW event from archived data
+        new_event = Event(
+            title=data.title,
+            description=data.description,
+            date=data.date,
+            starttime=data.starttime,
+            endtime=data.endtime,
+            mode=EventMode(data.mode.value),
+            visibility=EventVisibility(data.visibility.value),
+            venue=data.venue,
+            capacity=data.capacity,
+            organizer_id=current_user.id,
+            tags=Eventtag(data.tags.value),
+            is_archived=False  # New event is NOT archived
+        )
+
+        db.session.add(new_event)
+        db.session.commit()
+        
+        if request.is_json:
+            return jsonify({
+                "message": "Event recreated successfully",
+                "event_id": new_event.id
+            }), 201
+            
+        flash("Event recreated successfully!", "success")
+        return redirect(url_for("main.profile"))
+
+    except Exception as e:
+        db.session.rollback()
+        if request.is_json:
+            return jsonify({"error": str(e)}), 500
+        flash(f"Error recreating event: {str(e)}", "danger")
+        return redirect(url_for("events.view_archives"))

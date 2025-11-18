@@ -614,18 +614,19 @@ body {
                     {% if event.creator.id == current_user.id %}
                         {% if event.visibility.value == 'private' %}
                             <a href="{{ url_for('events.view_join_requests', event_id=event.id) }}"
-                               class="attendees-btn">View Requests</a>
+                            class="attendees-btn">View Requests</a>
                         {% endif %}
 
+
                         <form action="{{ url_for('events.delete_event', event_id=event.id) }}"
-                              method="POST"
-                              style="display:inline;">
+                            method="POST"
+                            style="display:inline;"
+                            onsubmit="return confirm('Permanently delete this event?');">
                             <button type="submit" class="delete-btn">Delete</button>
                         </form>
 
                         <a href="{{ url_for('events.load_update_event_page', event_id=event.id) }}"
-                           class="update-btn">Update</a>
-
+                        class="update-btn">Update</a>
                     {% else %}
                     <label>
                     <input type="checkbox" class="notify-checkbox" data-event-id="{{ event.id }}"
