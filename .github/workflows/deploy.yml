@@ -3,7 +3,7 @@ name: Deploy to EC2 🚀
 on:
   push:
     branches:
-      - "16-CICD-PYTHON-WEBAPP" # This triggers the workflow on push to any branch
+      - "**" # This triggers the workflow on push to any branch
 
 jobs:
   deploy:
