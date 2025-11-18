@@ -47,6 +47,7 @@ jobs:
       # 3️⃣ Add EC2 host to known hosts
       - name: Add EC2 to known hosts
         run: |
+          chmod 600 ~/.ssh/id_rsa  # Ensure permissions before any SSH operation
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || {
             echo "Warning: Could not add host to known_hosts, will use StrictHostKeyChecking=no"
           }
@@ -227,11 +228,42 @@ jobs:
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
 
-      # 1️⃣2️⃣ Rollback on failure
+      # 1️⃣2️⃣ Show error logs on failure
+      - name: Show deployment errors
+        if: failure()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "❌ DEPLOYMENT FAILED - Fetching error logs"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          
+          chmod 600 ~/.ssh/id_rsa
+          
+          ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            "$EC2_USERNAME@$EC2_HOST" << 'EOF' || true
+            echo "=== Service Status ==="
+            sudo systemctl status eventhive --no-pager -l || true
+            
+            echo ""
+            echo "=== Last 30 lines of service logs ==="
+            sudo journalctl -u eventhive -n 30 --no-pager || true
+            
+            echo ""
+            echo "=== Nginx Error Log ==="
+            sudo tail -20 /var/log/nginx/event_hive_error.log 2>/dev/null || echo "No nginx logs found"
+          EOF
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+
+      # 1️⃣3️⃣ Rollback on failure
       - name: Rollback on failure
         if: failure()
         run: |
           echo "❌ Deployment failed, initiating rollback..."
+          
+          # Ensure SSH key has correct permissions
+          chmod 600 ~/.ssh/id_rsa
+          
           ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
             "$EC2_USERNAME@$EC2_HOST" << 'EOF'
             set -e
