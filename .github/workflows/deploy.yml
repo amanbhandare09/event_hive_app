@@ -9,30 +9,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1️⃣ Checkout repository
-    - name: Checkout code
-      uses: actions/checkout@v4
+      # 1️⃣ Checkout repository
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    # 2️⃣ Setup SSH key
-    - name: Setup SSH key
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
+      # 2️⃣ Setup SSH key
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
-    # 3️⃣ Add EC2 host to known hosts
-    - name: Add EC2 to known hosts
-      run: |
-        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+      # 3️⃣ Add EC2 host to known hosts
+      - name: Add EC2 to known hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-    # 4️⃣ Upload project files to EC2
-    - name: Upload project files
-      run: |
-        scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r ./* \
-        ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/event_hive_app_temp/
+      # 4️⃣ Upload project files to EC2
+      - name: Upload project files
+        run: |
+          # Ensure the temp folder exists on EC2
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+          ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "mkdir -p ~/event_hive_app_temp"
+          
+          # Upload files
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r ./ \
+          ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/event_hive_app_temp/
 
-    # 5️⃣ Run deploy.sh on EC2 (root directory)
-    - name: Run deploy script
-      run: |
-        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-        ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "bash ~/event_hive_app_temp/deploy.sh"
+      # 5️⃣ Run deploy.sh on EC2
+      - name: Run deploy script
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+          ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "chmod +x ~/event_hive_app_temp/deploy.sh && bash ~/event_hive_app_temp/deploy.sh"
