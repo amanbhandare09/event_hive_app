@@ -41,19 +41,46 @@ jobs:
             echo "Warning: Could not add host to known_hosts, will use StrictHostKeyChecking=no"
           }
 
-      # 4️⃣ Test connection
+      # 4️⃣ Debug and test connection
+      - name: Debug connection details
+        run: |
+          echo "Verifying connection parameters..."
+          echo "Username length: ${#EC2_USERNAME}"
+          echo "Host length: ${#EC2_HOST}"
+          
+          # Test DNS resolution
+          if [[ "$EC2_HOST" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "✓ EC2_HOST appears to be an IP address"
+          else
+            echo "EC2_HOST appears to be a hostname, testing DNS..."
+            nslookup "$EC2_HOST" || echo "⚠️ DNS lookup failed"
+          fi
+          
+          # Test ping
+          ping -c 2 "$EC2_HOST" || echo "⚠️ Ping failed (may be blocked by security group)"
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+      
       - name: Test SSH connection
         run: |
-          echo "Testing connection to ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}"
+          echo "Attempting SSH connection..."
           ssh -T -i ~/.ssh/id_rsa \
             -o StrictHostKeyChecking=no \
             -o ConnectTimeout=10 \
             -o ServerAliveInterval=60 \
-            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} \
+            "$EC2_USERNAME@$EC2_HOST" \
             "echo '✓ SSH connection successful'" || {
               echo "❌ SSH connection failed"
+              echo "Please check:"
+              echo "1. EC2 instance is running"
+              echo "2. Security group allows SSH from GitHub Actions IPs"
+              echo "3. SSH key matches the one in EC2"
               exit 1
             }
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
 
       # 5️⃣ Create deployment metadata
       - name: Create deployment info
@@ -72,7 +99,7 @@ jobs:
       - name: Prepare EC2 environment
         run: |
           ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << 'EOF'
+            "$EC2_USERNAME@$EC2_HOST" << 'EOF'
             set -e
             echo "Creating temporary deployment directory..."
             mkdir -p ${{ env.TEMP_PATH }}
@@ -85,6 +112,9 @@ jobs:
               mkdir -p ${{ env.DEPLOY_PATH }}
             fi
           EOF
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
 
       # 7️⃣ Upload project files to EC2
       - name: Upload project files
@@ -104,15 +134,18 @@ jobs:
             --exclude='*.log' \
             -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
             ./ \
-            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:${{ env.TEMP_PATH }}/
+            "$EC2_USERNAME@$EC2_HOST:${{ env.TEMP_PATH }}/"
           
           echo "✓ Files uploaded successfully"
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
 
       # 8️⃣ Run deploy script on EC2
       - name: Run deploy script
         run: |
           ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << 'EOF'
+            "$EC2_USERNAME@$EC2_HOST" << 'EOF'
             set -e
             
             echo "Making deploy script executable..."
@@ -124,6 +157,9 @@ jobs:
             
             echo "✓ Deployment script completed"
           EOF
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
 
       # 9️⃣ Health check
       - name: Health check
@@ -136,7 +172,7 @@ jobs:
           RETRY_COUNT=0
           
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-            if curl -f -s -o /dev/null -w "%{http_code}" http://${{ secrets.EC2_HOST }}:5000/health | grep -q "200"; then
+            if curl -f -s -o /dev/null -w "%{http_code}" "http://$EC2_HOST:5000/health" | grep -q "200"; then
               echo "✓ Health check passed"
               exit 0
             else
@@ -150,16 +186,21 @@ jobs:
           echo "The application may still be starting up. Please verify manually."
           # Don't fail the workflow, just warn
           exit 0
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
 
       # 🔟 Cleanup temp directory
       - name: Cleanup temporary files
         if: always()
         run: |
           ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} \
+            "$EC2_USERNAME@$EC2_HOST" \
             "rm -rf ${{ env.TEMP_PATH }}" || true
           
           echo "✓ Cleanup completed"
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
 
       # 1️⃣1️⃣ Deployment summary
       - name: Deployment summary
@@ -171,8 +212,10 @@ jobs:
           echo "📦 Commit: ${{ github.sha }}"
           echo "👤 Deployed by: ${{ github.actor }}"
           echo "🌿 Branch: ${{ github.ref_name }}"
-          echo "🔗 Application URL: http://${{ secrets.EC2_HOST }}:5000"
+          echo "🔗 Application URL: http://$EC2_HOST:5000"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
 
       # 1️⃣2️⃣ Rollback on failure
       - name: Rollback on failure
@@ -180,7 +223,7 @@ jobs:
         run: |
           echo "❌ Deployment failed, initiating rollback..."
           ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << 'EOF'
+            "$EC2_USERNAME@$EC2_HOST" << 'EOF'
             set -e
             
             # Remove failed deployment
@@ -194,3 +237,6 @@ jobs:
             
             echo "⚠️ Rollback attempt completed"
           EOF
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
