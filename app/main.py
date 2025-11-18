@@ -196,53 +196,45 @@ def create_event_page():
 @events_blueprint.route("/create", methods=["POST"])
 @login_required
 def create_event():
-    data = request.get_json() if request.is_json else request.form
-
     try:
-        # Date & time
-        try:
-            date_value = datetime.strptime(data.get("date"), "%Y-%m-%d").date() if data.get("date") else None
-        except ValueError:
-            date_value = None
+        # Validate request data (support both JSON and form)
+        if request.is_json:
+            data = validate_json(EventCreateUpdateSchema)
+        else:
+            data = validate_form(EventCreateUpdateSchema)
 
-        try:
-            start_value = datetime.strptime(data.get("starttime"), "%H:%M").time() if data.get("starttime") else None
-        except ValueError:
-            start_value = None
-
-        try:
-            end_value = datetime.strptime(data.get("endtime"), "%H:%M").time() if data.get("endtime") else None
-        except ValueError:
-            end_value = None
-
-        # Mode & visibility
-        mode_value = (data.get("mode") or "online").lower()
-        visibility_value = (data.get("visibility") or "public").lower()
-
-        # Capacity
-        capacity = int(data.get("capacity") or 100)
-
+        # Create event with validated data
         event = Event(
-            title=data.get("title"),
-            description=data.get("description"),
-            date=date_value,
-            starttime=start_value,
-            endtime=end_value,
-            mode=EventMode(mode_value),
-            visibility=EventVisibility(visibility_value),
-            venue=data.get("venue"),
-            capacity=capacity,
+            title=data.title,
+            description=data.description,
+            date=data.date,
+            starttime=data.starttime,
+            endtime=data.endtime,
+            mode=EventMode(data.mode.value),
+            visibility=EventVisibility(data.visibility.value),
+            venue=data.venue,
+            capacity=data.capacity,
             organizer_id=current_user.id,
-            tags=Eventtag(data.get("tags") or ""),
+            tags=Eventtag(data.tags.value),
         )
 
         db.session.add(event)
         db.session.commit()
+        
+        if request.is_json:
+            return jsonify({
+                "message": "Event created successfully",
+                "event_id": event.id
+            }), 201
+            
         return redirect(url_for("main.profile"))
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        if request.is_json:
+            return jsonify({"error": str(e)}), 500
+        flash(f"Error creating event: {str(e)}", "danger")
+        return redirect(url_for("events.create_event_page"))
 
 
 # -------------------------------------
@@ -293,10 +285,15 @@ def update_event(event_id):
     if not event:
         return jsonify({"message": "Event not found"}), 404
 
+    # Check authorization
+    if event.organizer_id != current_user.id:
+        return jsonify({"message": "Unauthorized"}), 403
+
     try:
         # Validate request data
         data = validate_json(EventCreateUpdateSchema)
 
+        # Update event with validated data
         event.title = data.title
         event.description = data.description
         event.date = data.date
@@ -313,7 +310,6 @@ def update_event(event_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": str(e)}), 400
-
 
 # -------------------------------------
 # DELETE EVENT
