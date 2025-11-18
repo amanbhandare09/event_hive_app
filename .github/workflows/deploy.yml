@@ -1,48 +1,47 @@
-name: Deploy to EC2 🚀
+name: Deploy Flask App to EC2 (No Docker)
 
 on:
   push:
-    branches:
-      - "**" # This triggers the workflow on push to any branch
+    branches: ["main"]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout current branch ✅
-        uses: actions/checkout@v2
+    # 1. Pull code from GitHub
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up SSH key and whitelist EC2 IP address 🐻‍❄️
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+    # 2. Setup SSH private key
+    - name: Setup SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
 
-      - name: Create .env file dynamically 🧨
-        env:
-          ENV: ${{ secrets.ENV }}
-          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: |
-          echo "ENV=${ENV}" >> env
-          echo "EC2_USERNAME=${EC2_USERNAME}" >> env
-          echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> env
-      
-      - name: Copy files to remote server 🚙
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
-        run: |
-          scp -r * $EC2_USERNAME@$EC2_HOST:/home/ubuntu/
+    # 3. Add EC2 host to known hosts
+    - name: Add EC2 to known hosts
+      run: |
+        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Run Bash Script To Delpoy App 🚀
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
-        run: |
-          ssh -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_HOST "chmod +x ./deploy.sh && ./deploy.sh"
+    # 4. Upload project to EC2 (replaces old folder)
+    - name: Upload project to EC2
+      run: |
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+        ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "rm -rf ~/app && mkdir ~/app"
 
-      - name: Clean up SSH key 🚀
-        if: always()
-        run: rm -f ~/.ssh/id_rsa
+        scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r ./* \
+        ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/app/
+
+    # 5. Install dependencies & restart Flask/Gunicorn on EC2
+    - name: Restart EC2 App
+      run: |
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+        ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "
+          cd ~/app &&
+          python3 -m venv venv &&
+          source venv/bin/activate &&
+          pip install -r requirements.txt
+          sudo systemctl restart flaskapp
+        "
