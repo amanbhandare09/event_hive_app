@@ -1,156 +1,230 @@
 {% extends "base.html" %}
 
-{% block title %}Update Event | EventHive{% endblock %}
+{% block title %}Update Event | EventHub{% endblock %}
 
 {% block extra_css %}
 <style>
-  .form-container {
-    max-width: 600px;
-    margin: 40px auto;
-    background-color: #1a1a1a;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-  }
+    /* --- Form Card Container --- */
+    .form-container {
+        max-width: 700px; /* Slightly wider for better grid spacing */
+        margin: 40px auto;
+        background-color: var(--card-background); /* #ffffff */
+        padding: 35px;
+        border-radius: 12px;
+        /* Improved shadow for modern feel */
+        box-shadow: 0 10px 30px rgba(0, 123, 255, 0.15);
+        border: 1px solid var(--event-card-border); /* #d2e4ff */
+        color: var(--primary-text);
+        transition: all 0.3s;
+    }
 
-  h2 {
-    text-align: center;
-    color: #4CAF50;
-    margin-bottom: 25px;
-  }
+    .form-container:hover {
+        box-shadow: 0 15px 40px rgba(0, 123, 255, 0.2);
+    }
 
-  label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 500;
-  }
+    /* --- Heading --- */
+    h2 {
+        text-align: center;
+        color: var(--deep-title-blue); /* #003d99 */
+        margin-bottom: 30px;
+        font-weight: 700;
+        font-size: 26px;
+    }
 
-  input, textarea, select {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border: none;
-    border-radius: 6px;
-    background-color: #2a2a2a;
-    color: #fff;
-    font-size: 15px;
-  }
+    /* --- Form Grid Layout (UI Improvement) --- */
+    .form-group-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0 25px;
+        margin-bottom: 5px;
+    }
 
-  input:focus, textarea:focus, select:focus {
-    outline: 2px solid #4CAF50;
-  }
+    .form-field-wrapper {
+        margin-bottom: 15px;
+    }
 
-  button {
-    background-color: #4CAF50;
-    color: white;
-    padding: 12px 20px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    width: 100%;
-    font-size: 16px;
-    font-weight: 500;
-    transition: background-color 0.3s;
-  }
+    /* --- Input Styles --- */
+    label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: var(--secondary-grey-text);
+    }
 
-  button:hover {
-    background-color: #45a049;
-  }
+    input, textarea, select {
+        width: 100%;
+        padding: 12px;
+        /* Removed margin-bottom here, using form-field-wrapper */
+        border: 1px solid var(--navbar-border);
+        border-radius: 8px; /* Slightly rounder edges */
+        background-color: var(--hover-light-blue); /* #e6f0ff */
+        color: var(--primary-text);
+        font-size: 15px;
+        font-family: inherit;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
 
-  .message {
-    text-align: center;
-    margin-top: 15px;
-    font-size: 14px;
-  }
+    input:focus, textarea:focus, select:focus {
+        outline: none;
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+        background-color: #ffffff;
+    }
+
+    /* --- Submit Button --- */
+    button[type="submit"] {
+        background-color: var(--primary-blue);
+        color: white;
+        padding: 14px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        width: 100%;
+        font-size: 17px;
+        font-weight: 600;
+        transition: all 0.3s;
+        margin-top: 25px; /* Add extra space above button */
+    }
+
+    button[type="submit"]:hover {
+        background-color: var(--primary-dark-blue);
+        transform: translateY(-2px); /* Lift effect */
+        box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+    }
+
+    .message {
+        text-align: center;
+        margin-top: 15px;
+        font-size: 14px;
+        color: var(--secondary-grey-text);
+    }
+
+    /* Responsive adjustment for small screens */
+    @media (max-width: 768px) {
+        .form-container {
+            margin: 20px;
+            padding: 25px;
+        }
+        .form-group-grid {
+            grid-template-columns: 1fr; /* Stack columns vertically on mobile */
+            gap: 0;
+        }
+        .form-field-wrapper {
+            margin-bottom: 15px;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 
 <div class="form-container">
-  <h2>Update Event</h2>
+    <h2>📅 Update Event Details</h2>
 
-  <form id="updateEventForm">
+    <form id="updateEventForm">
 
-    <label for="title">Event Title</label>
-    <input type="text" id="title" name="title" value="{{ event.title }}" required>
+        <div class="form-field-wrapper">
+            <label for="title">Event Title</label>
+            <input type="text" id="title" name="title" value="{{ event.title }}" required>
+        </div>
 
-    <label for="description">Description</label>
-    <textarea id="description" name="description" rows="4" required>{{ event.description }}</textarea>
+        <div class="form-field-wrapper">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="4" required>{{ event.description }}</textarea>
+        </div>
 
-    <label for="date">Date</label>
-    <input type="date" id="date" name="date" value="{{ event.date }}" required>
+        <div class="form-group-grid">
+            <div class="form-field-wrapper">
+                <label for="date">Date</label>
+                <input type="date" id="date" name="date" value="{{ event.date }}" required>
+            </div>
+            
+            <div class="form-field-wrapper">
+                <label for="mode">Mode</label>
+                <select id="mode" name="mode" required>
+                    <option value="online"  {% if event.mode.value == 'online' %}selected{% endif %}>Online</option>
+                    <option value="offline" {% if event.mode.value == 'offline' %}selected{% endif %}>Offline</option>
+                </select>
+            </div>
+        </div>
 
-    <label for="start_time">Start Time</label>
-    <input type="time" id="starttime" name="starttime"
-           value="{{ event.starttime.strftime('%H:%M') if event.starttime else '' }}"
-           required>
+        <div class="form-group-grid">
+            <div class="form-field-wrapper">
+                <label for="start_time">Start Time</label>
+                <input type="time" id="starttime" name="starttime"
+                        value="{{ event.starttime.strftime('%H:%M') if event.starttime else '' }}"
+                        required>
+            </div>
 
-    <label for="end_time">End Time</label>
-    <input type="time" id="endtime" name="endtime"
-           value="{{ event.endtime.strftime('%H:%M') if event.endtime else '' }}"
-           required>
+            <div class="form-field-wrapper">
+                <label for="end_time">End Time</label>
+                <input type="time" id="endtime" name="endtime"
+                        value="{{ event.endtime.strftime('%H:%M') if event.endtime else '' }}"
+                        required>
+            </div>
+        </div>
 
-    <label for="mode">Mode</label>
-    <select id="mode" name="mode" required>
-      <option value="online"  {% if event.mode.value == 'online' %}selected{% endif %}>Online</option>
-      <option value="offline" {% if event.mode.value == 'offline' %}selected{% endif %}>Offline</option>
-    </select>
+        <div class="form-field-wrapper">
+            <label for="venue">Venue</label>
+            <input type="text" id="venue" name="venue" value="{{ event.venue }}" required>
+        </div>
 
-    <label for="venue">Venue</label>
-    <input type="text" id="venue" name="venue" value="{{ event.venue }}" required>
+        <div class="form-group-grid">
+            <div class="form-field-wrapper">
+                <label for="capacity">Capacity</label>
+                <input type="number" id="capacity" name="capacity" min="1" value="{{ event.capacity }}">
+            </div>
 
-    <label for="capacity">Capacity</label>
-    <input type="number" id="capacity" name="capacity" min="1" value="{{ event.capacity }}">
+            <div class="form-field-wrapper">
+                <label for="tags">Tags</label>
+                <select id="tags" name="tags" required>
+                    <option value="Music"      {% if event.tags.value == 'Music' %}selected{% endif %}>Music</option>
+                    <option value="Sports"     {% if event.tags.value == 'Sports' %}selected{% endif %}>Sports</option>
+                    <option value="Tech"       {% if event.tags.value == 'Tech' %}selected{% endif %}>Tech</option>
+                    <option value="Networking" {% if event.tags.value == 'Networking' %}selected{% endif %}>Networking</option>
+                    <option value="Art"        {% if event.tags.value == 'Art' %}selected{% endif %}>Art</option>
+                    <option value="Education"  {% if event.tags.value == 'Education' %}selected{% endif %}>Education</option>
+                </select>
+            </div>
+        </div>
 
-    <label for="tags">Tags</label>
-    <select id="tags" name="tags" required>
-      <option value="Music"      {% if event.tags.value == 'Music' %}selected{% endif %}>Music</option>
-      <option value="Sports"     {% if event.tags.value == 'Sports' %}selected{% endif %}>Sports</option>
-      <option value="Tech"       {% if event.tags.value == 'Tech' %}selected{% endif %}>Tech</option>
-      <option value="Networking" {% if event.tags.value == 'Networking' %}selected{% endif %}>Networking</option>
-      <option value="Art"        {% if event.tags.value == 'Art' %}selected{% endif %}>Art</option>
-      <option value="Education"  {% if event.tags.value == 'Education' %}selected{% endif %}>Education</option>
-    </select>
+        <button type="submit">Update Event</button>
+    </form>
 
-    <button type="submit">Update Event</button>
-  </form>
-
-  <div class="message" id="message"></div>
+    <div class="message" id="message"></div>
 </div>
 
 <script>
 document.getElementById('updateEventForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
+    e.preventDefault();
 
-  const data = {
-    title: document.getElementById('title').value,
-    description: document.getElementById('description').value,
-    date: document.getElementById('date').value,
-    starttime: document.getElementById('starttime').value,
-    endtime: document.getElementById('endtime').value,
-    mode: document.getElementById('mode').value,
-    venue: document.getElementById('venue').value,
-    capacity: document.getElementById('capacity').value,
-    tags: document.getElementById('tags').value
-  };
+    const data = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        date: document.getElementById('date').value,
+        starttime: document.getElementById('starttime').value,
+        endtime: document.getElementById('endtime').value,
+        mode: document.getElementById('mode').value,
+        venue: document.getElementById('venue').value,
+        capacity: document.getElementById('capacity').value,
+        tags: document.getElementById('tags').value
+    };
 
-  const response = await fetch("{{ url_for('events.update_event', event_id=event.id) }}", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
+    const response = await fetch("{{ url_for('events.update_event', event_id=event.id) }}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    });
 
-  const result = await response.json();
-  const messageEl = document.getElementById('message');
+    const result = await response.json();
+    const messageEl = document.getElementById('message');
 
-  if (response.ok) {
-    window.location.href = "{{ url_for('main.profile') }}";
-  } else {
-    messageEl.style.color = "red";
-    messageEl.textContent = "✗ Failed: " + (result.message || "Error");
-  }
+    if (response.ok) {
+        window.location.href = "{{ url_for('main.profile') }}";
+    } else {
+        messageEl.style.color = "red";
+        messageEl.textContent = "✗ Failed: " + (result.message || "Error");
+    }
 });
 </script>
-
 {% endblock %}

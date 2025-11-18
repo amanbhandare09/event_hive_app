@@ -1,120 +1,170 @@
 {% extends "base.html" %}
 
+{% block title %}Attendees for {{ event.title }} | EventHub{% endblock %}
+
 {% block content %}
 
 <style>
-  body {
-    background: linear-gradient(120deg, #0a0a0a, #003300);
-    color: #f0f0f0;
-    font-family: 'Poppins', sans-serif;
-    text-align: center;
-    padding: 30px;
-    margin: 0;
-  }
+    /* --- EventHub Color Variables (Primary Text/Colors are inherited) --- */
+    
+    /* Body background is inherited from base.html (var(--body-background): #f5f9ff) */
+    .attendee-page-wrapper {
+        padding: 30px 20px;
+        margin: 0 auto;
+        max-width: 800px;
+        color: var(--primary-text);
+        text-align: center;
+    }
+    
+    /* --- Central Card Container (UI Improvement) --- */
+    .central-card {
+        background: var(--card-background); /* #ffffff */
+        padding: 40px 30px;
+        border-radius: 16px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--event-card-border);
+        margin: 30px 0;
+    }
 
-  h1 {
-    color: #4CAF50;
-    font-size: 28px;
-    margin-bottom: 10px;
-  }
+    /* --- Event Title --- */
+    h1 {
+        color: var(--deep-title-blue); /* #003d99 */
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
 
-  .event-info {
-    margin-bottom: 30px;
-    color: #bbb;
-    font-size: 15px;
-  }
+    /* --- Metadata Box (UI Improvement) --- */
+    .event-info {
+        margin: 20px auto 30px;
+        padding: 15px 25px;
+        background: var(--hover-light-blue); /* #e6f0ff */
+        border-radius: 10px;
+        border: 1px solid var(--navbar-border);
+        max-width: 90%;
+        line-height: 1.6;
+        color: var(--secondary-grey-text);
+        font-size: 14px;
+    }
 
-  ul {
-    list-style: none;
-    padding: 0;
-    max-width: 500px;
-    margin: 0 auto;
-    background: #1a1a1a;
-    border-radius: 12px;
-    box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
-  }
+    .event-info p {
+        margin: 5px 0;
+    }
 
-  li {
-    margin: 8px 0;
-    padding: 12px;
-    background: #111;
-    border-radius: 8px;
-    border-left: 4px solid #4CAF50;
-    transition: background-color 0.2s;
-  }
+    .event-info strong {
+        color: var(--primary-blue);
+        font-weight: 600;
+    }
+    
+    .tag-badge {
+        /* Public/Private visibility tag */
+        background-color: #f8d7da; /* Light Red */
+        color: #721c24;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
 
-  li:hover {
-    background-color: #222;
-  }
+    /* --- Attendee List --- */
+    h3 {
+        color: var(--section-title-blue); /* #004099 */
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 20px;
+    }
 
-  .no-attendees {
-    font-size: 16px;
-    color: #999;
-    margin-top: 20px;
-  }
+    ul {
+        list-style: none;
+        padding: 0;
+        max-width: 500px;
+        margin: 0 auto;
+    }
 
-  a.back-btn {
-    display: inline-block;
-    margin-top: 25px;
-    padding: 10px 16px;
-    background-color: #4CAF50;
-    color: #fff;
-    border-radius: 8px;
-    text-decoration: none;
-    transition: background-color 0.3s;
-  }
+    li {
+        margin: 10px 0;
+        padding: 15px;
+        /* Light/Clean Card List Item */
+        background: var(--hover-light-blue);
+        border-radius: 8px;
+        border-left: 4px solid var(--primary-blue);
+        text-align: left;
+        transition: background-color 0.2s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
 
-  a.back-btn:hover {
-    background-color: #45a049;
-  }
+    li:hover {
+        background-color: #dbe4f4; /* Slightly darker light blue hover */
+    }
 
-  .tag-badge {
-    background-color: #2e7d32;
-    color: white;
-    padding: 3px 8px;
-    border-radius: 6px;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
+    li strong {
+        color: var(--primary-text);
+    }
+
+    .no-attendees {
+        font-size: 15px;
+        color: var(--secondary-grey-text);
+        margin-top: 20px;
+    }
+
+    /* --- Back Button --- */
+    a.back-btn {
+        display: inline-block;
+        margin-top: 30px;
+        padding: 10px 20px;
+        background-color: #f0f0f0; /* Light Gray */
+        color: var(--secondary-grey-text);
+        border: 1px solid var(--navbar-border);
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+
+    a.back-btn:hover {
+        background-color: var(--hover-light-blue);
+        color: var(--primary-text);
+        transform: translateY(-1px);
+    }
 </style>
 
-<h1>{{ event.title }}</h1>
+<div class="attendee-page-wrapper">
 
-<div class="event-info">
-  <p><strong>Date:</strong> {{ event.date.strftime('%d %b %Y') }}</p>
+    <h1>{{ event.title }}</h1>
 
-  <p>
-    <strong>Time:</strong>
-    {{ event.starttime.strftime('%I:%M %p') }} - {{ event.endtime.strftime('%I:%M %p') }}
-  </p>
+    <div class="central-card">
+        
+        <div class="event-info">
+            <p><strong>Date:</strong> {{ event.date.strftime('%d %b %Y') }} | 
+               <strong>Time:</strong> {{ event.starttime.strftime('%I:%M %p') }} - {{ event.endtime.strftime('%I:%M %p') }}</p>
+            <p><strong>Mode:</strong> {{ event.mode.value|capitalize }} | 
+               <strong>Venue:</strong> {{ event.venue }} | 
+               <strong>Tag:</strong> {{ event.tags.value }}
+            </p>
+            <p>
+                <strong>Type:</strong> 
+                <span class="tag-badge">{{ event.visibility.value }}</span>
+            </p>
+        </div>
 
-  <p><strong>Mode:</strong> {{ event.mode.value|capitalize }}</p>
-  <p><strong>Venue:</strong> {{ event.venue }}</p>
+        <h3>Registered Attendees:</h3>
 
-  <p>
-    <strong>Tag:</strong>
-    <span>{{ event.tags.value }}</span>
-  </p>
+        {% if attendees %}
+            <ul>
+                {% for attendee in attendees %}
+                    <li>
+                        <strong>{{ attendee.username }}</strong> ({{ attendee.email }})
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="no-attendees">No attendees have registered for this event yet.</p>
+        {% endif %}
+    </div>
 
-  <p>
-    <strong>Type:</strong>
-    <span class="tag-badge">{{ event.visibility.value }}</span>
-  </p>
+    <a href="{{ url_for('main.profile') }}" class="back-btn">← Back to Dashboard</a>
+
 </div>
-
-<h3>Attendees:</h3>
-
-{% if attendees %}
-  <ul>
-    {% for attendee in attendees %}
-      <li><strong>{{ attendee.username }}</strong> ({{ attendee.email }})</li>
-    {% endfor %}
-  </ul>
-{% else %}
-  <p class="no-attendees">No attendees yet.</p>
-{% endif %}
-
-<a href="{{ url_for('main.profile') }}" class="back-btn">← Back to Events</a>
 
 {% endblock %}

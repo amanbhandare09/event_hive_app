@@ -1,76 +1,113 @@
 {% extends "base.html" %}
 
-{% block title %}Create Event | EventHive{% endblock %}
+{% block title %}Create Event | EventHub{% endblock %}
 
 {% block extra_css %}
 <style>
-    body {
-        background: linear-gradient(120deg, #0a0a0a, #003300);
-        color: #f0f0f0;
-    }
-
+    /* --- Form Card Container --- */
     .form-container {
-        max-width: 600px;
+        max-width: 700px; /* Slightly wider for better grid spacing */
         margin: 40px auto;
-        background-color: #1a1a1a;
-        padding: 30px;
+        /* White Card from Base Theme */
+        background-color: var(--card-background); /* #ffffff */
+        padding: 35px;
         border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+        /* Improved shadow and border */
+        box-shadow: 0 10px 30px rgba(0, 123, 255, 0.15);
+        border: 1px solid var(--event-card-border); /* #d2e4ff */
+        color: var(--primary-text);
+        transition: all 0.3s;
     }
 
+    .form-container:hover {
+        box-shadow: 0 15px 40px rgba(0, 123, 255, 0.2);
+    }
+
+    /* --- Heading --- */
     h2 {
         text-align: center;
-        color: #4CAF50;
-        margin-bottom: 25px;
+        /* Deep Blue Title Color */
+        color: var(--deep-title-blue); /* #003d99 */
+        margin-bottom: 30px;
+        font-weight: 700;
+        font-size: 26px;
     }
 
+    /* --- Form Grid Layout (UI Improvement) --- */
+    .form-group-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0 25px;
+        margin-bottom: 5px;
+    }
+
+    .form-field-wrapper {
+        margin-bottom: 15px;
+    }
+
+    /* --- Input Styles --- */
     label {
         display: block;
         margin-bottom: 6px;
         font-weight: 500;
+        color: var(--secondary-grey-text); /* #555 */
     }
 
     input, textarea, select {
         width: 100%;
-        padding: 10px;
-        margin-bottom: 15px;
-        border: none;
-        border-radius: 6px;
-        background-color: #2a2a2a;
-        color: #fff;
+        padding: 12px;
+        border: 1px solid var(--navbar-border);
+        border-radius: 8px; /* Slightly rounder edges */
+        background-color: var(--hover-light-blue); /* #e6f0ff */
+        color: var(--primary-text);
         font-size: 15px;
+        font-family: inherit;
+        transition: border-color 0.3s, box-shadow 0.3s;
     }
 
     input:focus, textarea:focus, select:focus {
-        outline: 2px solid #4CAF50;
+        /* Primary Blue focus ring/border */
+        outline: none;
+        border-color: var(--primary-blue); /* #007bff */
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+        background-color: #ffffff;
     }
 
-    button {
-        background-color: #4CAF50;
+    /* --- Submit Button --- */
+    button[type="submit"] {
+        /* Primary Blue Button */
+        background-color: var(--primary-blue); /* #007bff */
         color: white;
-        padding: 12px 20px;
+        padding: 14px 20px;
         border: none;
         border-radius: 8px;
         cursor: pointer;
         width: 100%;
-        font-size: 16px;
-        font-weight: 500;
-        transition: background-color 0.3s;
+        font-size: 17px;
+        font-weight: 600;
+        transition: all 0.3s;
+        margin-top: 25px;
     }
 
-    button:hover {
-        background-color: #45a049;
+    button[type="submit"]:hover {
+        /* Darker Primary Blue Hover and Lift */
+        background-color: var(--primary-dark-blue); /* #005fcc */
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
     }
-
+    
     button:disabled {
-        background-color: #666;
+        background-color: #9cb3cc !important;
         cursor: not-allowed;
+        transform: translateY(0);
+        box-shadow: none;
     }
 
     .message {
         text-align: center;
         margin-top: 15px;
         font-size: 14px;
+        color: var(--secondary-grey-text);
     }
 </style>
 {% endblock %}
@@ -78,52 +115,79 @@
 {% block content %}
 
 <div class="form-container">
-    <h2>Create a New Event</h2>
+    <h2>🎉 Create a New Event</h2>
 
     <form id="createEventForm">
 
-        <label for="title">Event Title</label>
-        <input type="text" id="title" name="title" required>
+        <div class="form-field-wrapper">
+            <label for="title">Event Title</label>
+            <input type="text" id="title" name="title" required>
+        </div>
 
-        <label for="description">Description</label>
-        <textarea id="description" name="description" rows="4" required></textarea>
+        <div class="form-field-wrapper">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="4" required></textarea>
+        </div>
 
-        <label for="date">Date</label>
-        <input type="date" id="date" name="date" required>
+        <div class="form-group-grid">
+            <div class="form-field-wrapper">
+                <label for="date">Date</label>
+                <input type="date" id="date" name="date" required>
+            </div>
+            
+            <div class="form-field-wrapper">
+                <label for="mode">Mode</label>
+                <select id="mode" name="mode" required>
+                    <option value="online">Online</option>
+                    <option value="offline">Offline</option>
+                </select>
+            </div>
+        </div>
 
-        <label for="starttime">Start Time</label>
-        <input type="time" id="starttime" name="starttime" required>
+        <div class="form-group-grid">
+            <div class="form-field-wrapper">
+                <label for="starttime">Start Time</label>
+                <input type="time" id="starttime" name="starttime" required>
+            </div>
 
-        <label for="endtime">End Time</label>
-        <input type="time" id="endtime" name="endtime" required>
+            <div class="form-field-wrapper">
+                <label for="endtime">End Time</label>
+                <input type="time" id="endtime" name="endtime" required>
+            </div>
+        </div>
 
-        <label for="mode">Mode</label>
-        <select id="mode" name="mode" required>
-            <option value="online">Online</option>
-            <option value="offline">Offline</option>
-        </select>
+        <div class="form-group-grid">
+             <div class="form-field-wrapper">
+                <label for="venue">Venue</label>
+                <input type="text" id="venue" name="venue" required>
+            </div>
+            <div class="form-field-wrapper">
+                <label for="capacity">Capacity</label>
+                <input type="number" id="capacity" name="capacity" min="1" value="100">
+            </div>
+        </div>
+        
+        <div class="form-group-grid">
+            <div class="form-field-wrapper">
+                <label for="tags">Tags</label>
+                <select id="tags" name="tags" required>
+                    <option value="Music">Music</option>
+                    <option value="Sports">Sports</option>
+                    <option value="Tech">Tech</option>
+                    <option value="Art">Art</option>
+                    <option value="Education">Education</option>
+                    <option value="Networking">Networking</option>
+                </select>
+            </div>
 
-        <label for="venue">Venue</label>
-        <input type="text" id="venue" name="venue" required>
-
-        <label for="capacity">Capacity</label>
-        <input type="number" id="capacity" name="capacity" min="1" value="100">
-
-        <label for="tags">Tags</label>
-        <select id="tags" name="tags" required>
-            <option value="Music">Music</option>
-            <option value="Sports">Sports</option>
-            <option value="Tech">Tech</option>
-            <option value="Art">Art</option>
-            <option value="Education">Education</option>
-            <option value="Networking">Networking</option>
-        </select>
-
-        <label for="visibility">Visibility</label>
-        <select id="visibility" name="visibility" required>
-            <option value="public">Public</option>
-            <option value="private">Private</option>
-        </select>
+            <div class="form-field-wrapper">
+                <label for="visibility">Visibility</label>
+                <select id="visibility" name="visibility" required>
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
+                </select>
+            </div>
+        </div>
 
         <button type="submit" id="submitBtn">Create Event</button>
     </form>
@@ -164,27 +228,26 @@ document.getElementById('createEventForm').addEventListener('submit', async func
         });
 
         if (response.ok) {
-            // Check if response is JSON
+            
             const contentType = response.headers.get("content-type");
             if (contentType && contentType.includes("application/json")) {
                 const result = await response.json();
-                messageEl.style.color = "#4CAF50";
+                messageEl.style.color = "#16a34a"; // Green success color
                 messageEl.textContent = result.message || "Event created successfully!";
             }
             
-            // Redirect after short delay
             setTimeout(() => {
                 window.location.href = "{{ url_for('main.profile') }}";
             }, 500);
             
         } else {
-            // Try to parse error message
+            
             try {
                 const result = await response.json();
-                messageEl.style.color = "red";
+                messageEl.style.color = "#dc2626"; // Red error color
                 messageEl.textContent = "Failed: " + (result.message || "Error creating event");
             } catch {
-                messageEl.style.color = "red";
+                messageEl.style.color = "#dc2626";
                 messageEl.textContent = "Failed to create event. Please try again.";
             }
             
@@ -193,7 +256,7 @@ document.getElementById('createEventForm').addEventListener('submit', async func
             submitBtn.textContent = 'Create Event';
         }
     } catch (error) {
-        messageEl.style.color = "red";
+        messageEl.style.color = "#dc2626";
         messageEl.textContent = "Network error. Please try again.";
         submitBtn.disabled = false;
         submitBtn.textContent = 'Create Event';

@@ -1,177 +1,224 @@
 {% extends "base.html" %}
 
-{% block title %}QR Scanner | EventHive{% endblock %}
+{% block title %}QR Scanner | EventHub{% endblock %}
 
 {% block extra_css %}
 <style>
+    /* Global Background (Inherited from base) */
     body {
-        background: linear-gradient(135deg, #0d0d0d, #064420);
         min-height: 100vh;
+        /* Ensures the background remains light if base body is styled */
+        background: var(--body-background) !important; 
     }
 
+    /* --- Scanner Container (Main Card) --- */
     .scanner-container {
         max-width: 600px;
         margin: 40px auto;
         padding: 2rem;
-        background: rgba(0, 0, 0, 0.8);
+        /* White Card */
+        background: var(--card-background); /* #ffffff */
         border-radius: 12px;
-        box-shadow: 0 0 20px rgba(0, 255, 100, 0.2);
-        color: #fff;
+        /* Blue Shadow */
+        box-shadow: 0 4px 20px rgba(0, 123, 255, 0.1);
+        border: 1px solid var(--event-card-border);
+        color: var(--primary-text);
     }
 
     .scanner-header {
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
+        position: relative;
     }
 
     .scanner-header h1 {
-        color: #00ff88;
+        /* Primary Blue */
+        color: var(--primary-blue);
         margin-bottom: 0.5rem;
+        font-size: 26px;
+        font-weight: 700;
     }
 
+    /* --- Back Button (Top Left) --- */
+    .back-button {
+        position: absolute;
+        left: 0;
+        top: 0;
+        background: white;
+        border: 2px solid var(--primary-blue);
+        color: var(--primary-blue);
+        font-size: 16px;
+        cursor: pointer;
+        padding: 8px 16px;
+        border-radius: 8px;
+        transition: 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+    }
+
+    .back-button:hover {
+        background: var(--primary-blue);
+        color: white;
+        transform: translateX(-3px);
+        box-shadow: 0 4px 12px rgba(0, 123, 255, 0.25);
+    }
+
+    .back-button span {
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    /* --- Event Info Block --- */
     .event-info {
-        background: rgba(0, 255, 136, 0.1);
+        /* Light Blue Background */
+        background: var(--hover-light-blue);
         padding: 1rem;
         border-radius: 8px;
         margin-bottom: 1.5rem;
-        border-left: 4px solid #00ff88;
+        border-left: 4px solid var(--primary-blue);
     }
 
     .event-info h3 {
-        color: #00ff88;
+        color: var(--primary-blue);
         margin: 0 0 0.5rem 0;
         font-size: 18px;
     }
 
     .event-info p {
         margin: 0;
-        color: rgba(255, 255, 255, 0.8);
+        color: var(--secondary-grey-text);
         font-size: 14px;
     }
 
+    /* --- Video Feed Styling --- */
     #video {
         width: 100%;
         max-width: 500px;
-        margin: 20px auto;
+        margin: 15px auto 5px; /* Reduced top margin */
         display: block;
         border-radius: 10px;
-        box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-        border: 2px solid #00ff88;
+        box-shadow: 0 0 15px rgba(0, 123, 255, 0.2);
+        border: 2px solid var(--primary-blue);
     }
 
     .controls {
         text-align: center;
-        margin: 1.5rem 0;
+        margin-bottom: 1rem;
     }
 
+    /* --- Buttons --- */
     .btn {
-        padding: 12px 30px;
+        padding: 10px 25px;
         border-radius: 8px;
-        font-weight: bold;
-        font-size: 15px;
+        font-weight: 600;
+        font-size: 14px;
         border: none;
         cursor: pointer;
-        margin: 0 10px;
+        margin: 0 5px;
         transition: 0.3s;
     }
 
     .btn-primary {
-        background: #00ff88;
-        color: #000;
+        background: var(--primary-blue);
+        color: white;
     }
 
     .btn-primary:hover {
-        background: #00cc6a;
-    }
-
-    .btn-secondary {
-        background: transparent;
-        border: 2px solid #00ff88;
-        color: #00ff88;
-    }
-
-    .btn-secondary:hover {
-        background: #00ff88;
-        color: #000;
+        background: var(--primary-dark-blue);
     }
 
     .btn-stop {
-        background: #dc3545;
+        background: #dc3545; /* Error Red Button */
         color: #fff;
     }
 
     .btn-stop:hover {
         background: #b52a36;
     }
-
+    
+    /* --- Result Feedback Area (Enhanced) --- */
     #result {
-        margin-top: 20px;
-        padding: 1.5rem;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 10px;
+        margin-top: 10px;
+        padding: 1.2rem;
+        background: var(--hover-light-blue);
+        border-radius: 8px;
         font-size: 16px;
         word-wrap: break-word;
-        min-height: 80px;
+        min-height: 60px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 1px solid rgba(0, 255, 136, 0.2);
+        text-align: center;
+        border: 1px solid var(--navbar-border);
+        color: var(--primary-text);
+        font-weight: 500;
+        margin-bottom: 1rem;
     }
 
     #result.success {
-        background: rgba(0, 255, 136, 0.2);
-        border-color: #00ff88;
-        color: #00ff88;
+        background: #d4edda; /* Success Green */
+        border-color: #155724;
+        color: #155724;
+        font-weight: 700;
     }
 
     #result.error {
-        background: rgba(255, 77, 77, 0.2);
-        border-color: #ff4d4d;
-        color: #ff4d4d;
+        background: #f8d7da; /* Error Red */
+        border-color: #721c24;
+        color: #721c24;
+        font-weight: 700;
     }
 
     #result.warning {
-        background: rgba(255, 193, 7, 0.2);
-        border-color: #ffc107;
-        color: #ffc107;
+        background: #fff3cd; /* Warning Yellow */
+        border-color: #856404;
+        color: #856404;
+        font-weight: 700;
     }
 
+    /* --- Stats Section (Grid Layout) --- */
     .stats-container {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        grid-template-columns: repeat(3, 1fr); /* Fixed 3 columns */
         gap: 1rem;
-        margin-top: 2rem;
+        margin-top: 1.5rem;
     }
 
     .stat-card {
-        background: rgba(255, 255, 255, 0.05);
-        padding: 1rem;
+        background: var(--hover-light-blue);
+        padding: 0.8rem;
         border-radius: 8px;
         text-align: center;
-        border: 1px solid rgba(0, 255, 136, 0.2);
+        border: 1px solid var(--navbar-border);
     }
 
     .stat-card h4 {
-        color: #00ff88;
-        margin: 0 0 0.5rem 0;
-        font-size: 24px;
+        color: var(--primary-blue);
+        margin: 0 0 0.2rem 0;
+        font-size: 20px;
+        font-weight: 700;
     }
 
     .stat-card p {
         margin: 0;
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 14px;
+        color: var(--secondary-grey-text);
+        font-size: 12px;
     }
 
+    /* --- Scan Indicator --- */
     .scan-indicator {
         text-align: center;
-        margin: 1rem 0;
+        margin: 0.5rem 0;
         font-size: 14px;
-        color: rgba(255, 255, 255, 0.6);
+        color: var(--secondary-grey-text);
     }
 
     .scan-indicator.active {
-        color: #00ff88;
+        color: var(--primary-blue);
+        font-weight: 600;
         animation: pulse 1.5s infinite;
     }
 
@@ -182,8 +229,8 @@
 
     .back-link {
         display: inline-block;
-        margin-top: 1.5rem;
-        color: #00ff88;
+        margin-top: 2rem;
+        color: var(--primary-blue);
         text-decoration: none;
         font-size: 14px;
     }
@@ -198,9 +245,24 @@
             padding: 1.5rem;
         }
 
-        .btn {
-            margin: 5px;
-            padding: 10px 20px;
+        .scanner-header {
+            padding-top: 30px;
+        }
+
+        .back-button {
+            font-size: 20px;
+        }
+
+        .back-button span {
+            display: none;
+        }
+
+        .stats-container {
+            grid-template-columns: 1fr;
+        }
+
+        .stat-card {
+            padding: 1rem;
         }
     }
 </style>
@@ -210,22 +272,14 @@
 
 <div class="scanner-container">
     
-    <!-- Header -->
     <div class="scanner-header">
+        <button class="back-button" onclick="goBack()">
+            ← <span>Back</span>
+        </button>
         <h1>📷 QR Code Scanner</h1>
-        <p>Scan attendee QR codes to mark attendance</p>
+        <p style="color: var(--secondary-grey-text);">Managing Check-ins for: {{ event.title }}</p>
     </div>
 
-    <!-- Event Info -->
-    <div class="event-info">
-        <h3>{{ event.title }}</h3>
-        <p>📅 {{ event.date.strftime('%B %d, %Y') }}</p>
-        {% if event.starttime %}
-        <p>🕐 {{ event.starttime.strftime('%I:%M %p') }}</p>
-        {% endif %}
-    </div>
-
-    <!-- Controls -->
     <div class="controls">
         <button class="btn btn-primary" onclick="startCamera()" id="startBtn">
             Start Camera
@@ -235,34 +289,29 @@
         </button>
     </div>
 
-    <!-- Scan Indicator -->
     <div class="scan-indicator" id="scanIndicator">
         Ready to scan...
     </div>
 
-    <!-- Video -->
     <video id="video" autoplay playsinline style="display: none;"></video>
 
-    <!-- Result -->
     <div id="result">Waiting to start scanner...</div>
 
-    <!-- Stats -->
     <div class="stats-container">
         <div class="stat-card">
             <h4 id="scannedCount">0</h4>
-            <p>Scanned</p>
+            <p>Scans Attempted</p>
         </div>
         <div class="stat-card">
             <h4 id="successCount">0</h4>
-            <p>Successful</p>
+            <p>Successful Check-ins</p>
         </div>
         <div class="stat-card">
             <h4 id="errorCount">0</h4>
-            <p>Errors</p>
+            <p>Errors/Duplicates</p>
         </div>
     </div>
 
-    <!-- Back Link -->
     <div style="text-align: center;">
         <a href="{{ url_for('attendees.get_attendee', event_id=event.id) }}" class="back-link">
             ← Back to Attendees List
@@ -271,7 +320,6 @@
 
 </div>
 
-<!-- jsQR Library -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 
 <script>
@@ -288,6 +336,17 @@
     let errorCount = 0;
 
     const EVENT_ID = {{ event.id }};
+
+    // Back button function
+    function goBack() {
+        // Stop camera before navigating back
+        if (video.srcObject) {
+            video.srcObject.getTracks().forEach(track => track.stop());
+        }
+        
+        // Use browser history to go back to previous page
+        window.history.back();
+    }
 
     async function startCamera() {
         try {
