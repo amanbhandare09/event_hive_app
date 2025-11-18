@@ -24,9 +24,11 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           
-          # Always decode from base64
-          echo "Decoding SSH key from base64..."
-          echo "${{ secrets.EC2_SSH_KEY }}" | base64 -d > ~/.ssh/id_rsa
+          # Write key directly and fix any line ending issues
+          echo "$EC2_SSH_KEY" > ~/.ssh/id_rsa
+          
+          # Convert any Windows line endings to Unix
+          sed -i 's/\r$//' ~/.ssh/id_rsa
           
           chmod 600 ~/.ssh/id_rsa
           
@@ -40,9 +42,20 @@ jobs:
             echo "✅ SSH key is valid"
           else
             echo "❌ SSH key validation failed"
-            echo "This might be a key format issue"
-            exit 1
+            echo "Attempting to fix key format..."
+            
+            # Try to fix common issues
+            dos2unix ~/.ssh/id_rsa 2>/dev/null || sed -i 's/\r$//' ~/.ssh/id_rsa
+            
+            if ssh-keygen -l -f ~/.ssh/id_rsa 2>/dev/null; then
+              echo "✅ Key fixed and now valid"
+            else
+              echo "❌ Could not fix key format"
+              exit 1
+            fi
           fi
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
       # 3️⃣ Add EC2 host to known hosts
       - name: Add EC2 to known hosts
