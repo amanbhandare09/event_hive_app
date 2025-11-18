@@ -1,160 +1,188 @@
 {% extends "base.html" %}
 
-{% block title %}Registration Success | EventHive{% endblock %}
+{% block title %}Registration Success | EventHub{% endblock %}
 
 {% block extra_css %}
 <style>
-  .success-container {
-    max-width: 600px;
-    margin: 60px auto;
-    padding: 40px;
-    background-color: #1a1a1a;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.8);
-    text-align: center;
-  }
 
-  .success-icon {
-    font-size: 64px;
-    color: #4CAF50;
-    margin-bottom: 20px;
-    animation: scaleIn 0.5s ease-out;
-  }
+/* ---------- TICKET WRAPPER ---------- */
+.success-container {
+  max-width: 480px;
+  margin: 40px auto 70px;
+  padding: 28px;
+  background: var(--card-background);
+  border-radius: 18px;
+  text-align: center;
+  border: 1px solid var(--event-card-border);
+  box-shadow: 0 8px 18px rgba(0, 123, 255, 0.16);
+  transition: 0.25s ease-in-out;
+}
 
-  @keyframes scaleIn {
-    from { transform: scale(0); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-  }
+.success-container:hover {
+  transform: translateY(-2px);
+}
 
-  h1 {
-    color: #4CAF50;
-    margin-bottom: 10px;
-    font-size: 32px;
-  }
+/* ---------- ICON ---------- */
+.success-icon {
+  font-size: 58px;
+  color: var(--primary-blue);
+  font-weight: 700;
+  margin-bottom: 6px;
+  animation: pop .4s ease;
+}
 
-  .event-details {
-    background-color: #0d0d0d;
-    padding: 20px;
-    border-radius: 12px;
-    margin: 30px 0;
-    text-align: left;
-    border-left: 4px solid #4CAF50;
-  }
+@keyframes pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
 
-  .event-details h2 {
-    color: #4CAF50;
-    margin-top: 0;
-    font-size: 24px;
-  }
+/* ---------- HEADINGS ---------- */
+.success-container h1 {
+  color: var(--deep-title-blue);
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
 
-  .detail-row {
-    margin: 12px 0;
-    font-size: 16px;
-  }
+.success-container p {
+  color: var(--description-text);
+  font-size: 15px;
+}
 
-  .detail-label {
-    color: #aaa;
-    font-weight: 500;
-  }
+/* ---------- EVENT DETAILS BOX ---------- */
+.event-details {
+  margin: 22px 0;
+  padding: 18px;
+  border-radius: 16px;
+  border-left: 3px dashed var(--primary-blue);
+  border-right: 3px dashed var(--primary-blue);
+  background: var(--events-section-bg);
+  text-align: left;
+}
 
-  .qr-section {
-    background-color: #fff;
-    padding: 30px;
-    border-radius: 12px;
-    margin: 30px 0;
-    display: inline-block;
-  }
+.event-details h2 {
+  font-size: 20px;
+  color: var(--section-title-blue);
+  font-weight: 600;
+  margin-top: 0;
+}
 
-  .qr-section img {
-    max-width: 250px;
-    height: auto;
-    display: block;
-    margin: 0 auto;
-  }
+/* Event rows */
+.detail-row {
+  margin: 8px 0;
+  font-size: 15px;
+  color: var(--primary-text);
+}
 
-  .qr-instructions {
-    color: #ccc;
-    font-size: 14px;
-    margin-top: 20px;
-    line-height: 1.6;
-  }
+.detail-label {
+  color: var(--primary-dark-blue);
+  font-weight: 600;
+  margin-right: 6px;
+}
 
-  .token-info {
-    background-color: #0d0d0d;
-    padding: 15px;
-    border-radius: 8px;
-    margin: 20px 0;
-    font-family: 'Courier New', monospace;
-    word-break: break-all;
-    font-size: 14px;
-    color: #4CAF50;
-  }
+/* ---------- QR AREA ---------- */
+.qr-section {
+  background: var(--card-background);
+  padding: 14px;
+  border-radius: 12px;
+  margin: 22px 0;
+  border: 1px solid var(--event-card-border);
+  box-shadow: 0 5px 14px rgba(0, 123, 255, 0.12);
+}
 
-  .action-buttons {
-    margin-top: 30px;
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
+.qr-section h3 {
+  color: var(--section-title-blue);
+  margin-top: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
 
-  .btn {
-    padding: 12px 24px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.3s;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-  }
+.qr-section img {
+  width: 150px;
+  height: 150px;
+  border-radius: 6px;
+  border: 1px solid var(--event-card-border);
+}
 
-  .btn-primary {
-    background-color: #4CAF50;
-    color: #fff;
-  }
-  .btn-primary:hover {
-    background-color: #45a049;
-    transform: translateY(-2px);
-  }
+/* ---------- TOKEN BOX ---------- */
+.token-info {
+  margin-top: 14px;
+  padding: 12px;
+  background: var(--hero-gradient-light);
+  border-radius: 8px;
+  border: 1px solid var(--event-card-border);
+  color: var(--primary-dark-blue);
+  font-family: "Courier New", monospace;
+  font-size: 14px;
+  word-break: break-all;
+}
 
-  .btn-secondary {
-    background-color: #333;
-    color: #fff;
-  }
-  .btn-secondary:hover {
-    background-color: #444;
-    transform: translateY(-2px);
-  }
+/* ---------- BUTTONS ---------- */
+.action-buttons {
+  margin-top: 22px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 
-  .download-btn {
-    background-color: #2196F3;
-    color: #fff;
-  }
-  .download-btn:hover {
-    background-color: #0b7dda;
-  }
+.btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: .25s;
+  border: none;
+}
+
+/* PRIMARY CTA */
+.btn-primary {
+  background: var(--cta-background-blue);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--primary-dark-blue);
+  transform: translateY(-2px);
+}
+
+/* SECONDARY */
+.btn-secondary {
+  background: var(--hover-light-blue);
+  border: 1px solid var(--event-card-border);
+  color: var(--primary-dark-blue);
+}
+.btn-secondary:hover {
+  background: var(--hero-gradient-light);
+}
+
+/* DOWNLOAD BTN (lighter blue variant) */
+.download-btn {
+  background: var(--primary-blue);
+  color: #fff;
+}
+.download-btn:hover {
+  background: var(--primary-dark-blue);
+}
+
 </style>
 {% endblock %}
 
 {% block content %}
 
 <div class="success-container">
-  <div class="success-icon">✓</div>
 
+  <div class="success-icon">✓</div>
   <h1>Successfully Registered!</h1>
-  <p style="color: #aaa; font-size: 18px;">You're all set for the event</p>
+  <p>Your Digital Event Ticket is Ready</p>
 
   <div class="event-details">
     <h2>{{ event.title }}</h2>
 
-    <div class="detail-row">
-      <span class="detail-label">Date:</span>
-      {{ event.date.strftime('%d %b %Y') }}
-    </div>
+    <div class="detail-row"><span class="detail-label">Date:</span> {{ event.date.strftime('%d %b %Y') }}</div>
 
-    <div class="detail-row">
-      <span class="detail-label">Time:</span>
+    <div class="detail-row"><span class="detail-label">Time:</span>
       {% if event.time %}
         {{ event.time.strftime('%I:%M %p') }}
       {% else %}
@@ -162,34 +190,19 @@
       {% endif %}
     </div>
 
-    <div class="detail-row">
-      <span class="detail-label">Venue:</span>
-      {{ event.venue if event.venue else 'Online' }}
-    </div>
+    <div class="detail-row"><span class="detail-label">Venue:</span> {{ event.venue if event.venue else 'Online' }}</div>
 
-    <div class="detail-row">
-      <span class="detail-label">Mode:</span>
-      {{ event.mode.value|capitalize }}
-    </div>
+    <div class="detail-row"><span class="detail-label">Mode:</span> {{ event.mode.value|capitalize }}</div>
   </div>
 
   <div class="qr-section">
-    <h3 style="color: #333; margin-top: 0;">Your Entry Pass</h3>
-
+    <h3>Your Entry Pass</h3>
     {% if attendee.qr_code_path %}
-    <img 
-      src="{{ url_for('static', filename='qr_codes/qr_' ~ attendee.user_id ~ '_' ~ event.id ~ '_' ~ attendee.id ~ '.png') }}"
-      alt="QR Code"
-      style="width:200px;height:200px;"
-    >
+      <img src="{{ url_for('static', filename='qr_codes/qr_' ~ attendee.user_id ~ '_' ~ event.id ~ '_' ~ attendee.id ~ '.png') }}"
+           alt="QR Code">
     {% else %}
-      <p style="color: #666;">QR Code not available</p>
+      <p style="color:var(--description-text);">QR Code not available</p>
     {% endif %}
-  </div>
-
-  <div class="qr-instructions">
-    <strong>📱 Save this QR code!</strong><br>
-    Present at the event entrance for quick check-in.
   </div>
 
   <div class="token-info">
@@ -201,20 +214,14 @@
 
     {% if attendee.qr_code_path %}
       <a href="{{ url_for('static', filename=attendee.qr_code_path) }}"
-        download="event_qr_{{ event.id }}.png"
-        class="btn download-btn">
-        Download QR Code
-      </a>
+         download="event_qr_{{ event.id }}.png"
+         class="btn download-btn">Download QR</a>
     {% endif %}
 
-    <a href="{{ url_for('main.profile') }}" class="btn btn-primary">
-      Back to Events
-    </a>
+    <a href="{{ url_for('main.profile') }}" class="btn btn-primary">Back to Events</a>
 
     <a href="{{ url_for('attendees.get_attendee', attendee_id=current_user.id, event_id=event.id) }}"
-      class="btn btn-secondary">
-      View All Attendees
-    </a>
+       class="btn btn-secondary">View Attendees</a>
 
   </div>
 

@@ -3,31 +3,77 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}EventHive{% endblock %}</title>
+  <title>{% block title %}EventHub{% endblock %}</title>
 
-  <!-- Common CSS -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- EventHub Blue & White Color Schema -->
   <style>
+    :root {
+      /* Primary Colors */
+      --primary-blue: #007bff;
+      --primary-dark-blue: #005fcc;
+      --deep-title-blue: #003d99;
+      --section-title-blue: #004099;
+      --cta-background-blue: #0a56d8;
+      --cta-gradient-blue: #3f8cff;
+
+      /* Background Colors */
+      --body-background: #f5f9ff;
+      --hero-gradient-light: #dceaff;
+      --events-section-bg: #f0f6ff;
+      --card-background: #ffffff;
+
+      /* Border Colors */
+      --navbar-border: #d0e3ff;
+      --features-card-border: #dbe7ff;
+      --event-card-border: #d2e4ff;
+      --event-image-divider: #c6dbff;
+
+      /* Text Colors */
+      --primary-text: #1a1a1a;
+      --secondary-grey-text: #555;
+      --description-text: #666;
+
+      /* Accent Colors */
+      --event-tag-blue: #007bff;
+      --hover-light-blue: #e6f0ff;
+    }
+
     body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(120deg, #0a0a0a, #003300);
-      color: #f0f0f0;
+      font-family: "Poppins", sans-serif;
+      background: var(--body-background);
+      color: var(--primary-text);
       margin: 0;
       padding: 0;
     }
 
+    /* NAVBAR (exact copy from landing) */
     header {
+      background: #ffffff;
+      border-bottom: 1px solid #d0e3ff;
+      padding: 18px 50px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background-color: #111;
-      padding: 15px 40px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      max-width: 1300px;
+      margin: auto;
     }
 
     .logo {
-      font-size: 24px;
-      font-weight: bold;
-      color: #4CAF50;
+      font-size: 26px;
+      font-weight: 700;
+      color: #007bff;
+    }
+
+    .logo-link {
+      font-size: 26px;
+      font-weight: 700;
+      color: #007bff;
+      text-decoration: none;
     }
 
     .user-info {
@@ -36,52 +82,54 @@
       gap: 15px;
     }
 
-    /* Circular profile button */
-    .profile-circle {
-      width: 45px;
-      height: 45px;
-      border-radius: 50%;
-      background-color: #4CAF50;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: #111;
-      font-weight: bold;
-      cursor: pointer;
-      text-decoration: none;
-      border: 2px solid #4CAF50;
-      transition: 0.3s;
-    }
-
-    .profile-circle:hover {
-      background-color: #45a049;
-    }
-
+    /* Buttons */
     .create-event-btn {
-      background-color: #4CAF50;
+      background-color: var(--cta-background-blue);
       color: #fff;
       padding: 10px 16px;
       border-radius: 8px;
       text-decoration: none;
       font-weight: 500;
-      transition: background-color 0.3s;
+      transition: all 0.3s ease;
+      border: none;
     }
 
     .create-event-btn:hover {
-      background-color: #45a049;
+      background-color: var(--primary-dark-blue);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.25);
     }
 
-    .logo-link {
-    text-decoration: none;
-    color: inherit;
-    font-weight: bold;
-    cursor: pointer;
-}
+    /* Profile Circle */
+    .profile-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background-color: var(--primary-blue);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      border: 2px solid var(--primary-blue);
+      transition: all 0.3s ease;
+    }
 
-.logo-link:hover {
-    opacity: 0.8;
-}
+    .profile-circle:hover {
+      background-color: var(--primary-dark-blue);
+      border-color: var(--primary-dark-blue);
+      transform: scale(1.05);
+    }
 
+    /* Main content */
+    .content {
+      padding: 30px;
+      width: 90%;
+      max-width: 1200px;
+      margin: auto;
+    }
   </style>
 
   {% block extra_css %}{% endblock %}
@@ -90,21 +138,19 @@
 <body>
 
 <header>
-<div class="logo">
-    <a href="{{ url_for('main.profile') }}" class="logo-link">
-        EventHive
-    </a>
-</div>
-
+  <div class="logo">
+      <a href="{{ url_for('main.profile') }}" class="logo-link">
+          EventHive
+      </a>
+  </div>
 
   {% if current_user.is_authenticated %}
   <div class="user-info">
     <a href="{{ url_for('events.live_events') }}" class="create-event-btn">🔴 Live</a>
     <a href="{{ url_for('events.create_event') }}" class="create-event-btn">+ Create Event</a>
 
-    <!-- Circular button → Go to user profile -->
-     <!-- need to change this to profile page -->
-    <a href="{{ url_for('auth.profile') }}" class="profile-circle"> 
+    <!-- Profile -->
+    <a href="{{ url_for('main.user_profile') }}" class="profile-circle">
       {{ current_user.username[0].upper() }}
     </a>
   </div>
