@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Event Chatbot</title>
+    <style>
+        body {
+            background: #f2f3f7;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            padding-top: 40px;
+        }
+
+        .chat-container {
+            width: 420px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .messages {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 10px;
+            background: #fafafa;
+        }
+
+        .msg {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            max-width: 85%;
+        }
+
+        .user {
+            background: #daf1ff;
+            margin-left: auto;
+        }
+
+        .bot {
+            background: #e8e8e8;
+            margin-right: auto;
+        }
+
+        .input-area {
+            display: flex;
+            margin-top: 15px;
+        }
+
+        input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            outline: none;
+        }
+
+        button {
+            margin-left: 8px;
+            padding: 10px 16px;
+            border: none;
+            background: #007bff;
+            color: white;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0063d1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <h2 style="text-align:center;margin-bottom:15px;">Event Chatbot</h2>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="input-area">
+        <input id="questionInput" type="text" placeholder="Ask about an event...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+function addMessage(text, sender) {
+    let msgBox = document.getElementById("messages");
+    let msg = document.createElement("div");
+    msg.classList.add("msg", sender);
+    msg.innerText = text;
+    msgBox.appendChild(msg);
+    msgBox.scrollTop = msgBox.scrollHeight;
+}
+
+async function sendMessage() {
+    let input = document.getElementById("questionInput");
+    let question = input.value.trim();
+    if (!question) return;
+
+    addMessage(question, "user");
+    input.value = "";
+
+    // Send request to Flask chatbot route
+    let response = await fetch("/chatbot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: question })
+    });
+
+    let data = await response.json();
+    addMessage(data.answer, "bot");
+}
+</script>
+
+</body>
+</html>
