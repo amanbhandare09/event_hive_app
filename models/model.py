@@ -71,6 +71,8 @@ class Event(db.Model):
     # public/private
     visibility = db.Column(db.Enum(EventVisibility), default=EventVisibility.public, nullable=False)
 
+    # archived flag
+    is_archived = db.Column(db.Boolean, default=False)
     # Link to creator
     organizer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     creator = db.relationship("User", backref=db.backref("created_events", lazy=True))
