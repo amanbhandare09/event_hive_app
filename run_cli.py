@@ -24,7 +24,6 @@ def init_db(args):
 # SEND REMINDERS
 # ---------------------------------------------------------
 def send_reminders(args):
-    """Send reminders for events within the next 24 hours."""
     with app.app_context():
         from models.model import Event
 
@@ -86,7 +85,7 @@ def add_event(args):
         try:
             mode = EventMode[args.mode.lower()]
         except KeyError:
-            print("Invalid mode. Use 'online' or 'offline'.")
+            print("Invalid mode. Use online/offline.")
             return
 
         try:
@@ -129,12 +128,8 @@ def create_user(args):
     with app.app_context():
         from models.model import User
 
-        existing_user = User.query.filter(
-            (User.username == args.username) | (User.email == args.email)
-        ).first()
-
-        if existing_user:
-            print("User with this username or email already exists.")
+        if User.query.filter((User.username == args.username) | (User.email == args.email)).first():
+            print("User already exists.")
             return
 
         hashed_password = generate_password_hash(args.password)
@@ -330,17 +325,17 @@ def list_users(args):
 # MAIN & ARGUMENT PARSER
 # ---------------------------------------------------------
 def main():
-    parser = argparse.ArgumentParser(description="Manage your Flask Event App")
-    subparsers = parser.add_subparsers(help="Available commands")
+    parser = argparse.ArgumentParser(description="Event Hive CLI")
+    subparsers = parser.add_subparsers()
 
     # init-db
-    parser_init = subparsers.add_parser("init-db", help="Initialize the database")
-    parser_init.add_argument("--drop", action="store_true", help="Drop existing tables before creating new ones")
+    parser_init = subparsers.add_parser("init-db", help="Initialize database")
+    parser_init.add_argument("--drop", action="store_true", help="Drop tables first")
     parser_init.set_defaults(func=init_db)
 
     # send-reminders
-    parser_reminders = subparsers.add_parser("send-reminders", help="Send event reminders within 24 hours")
-    parser_reminders.set_defaults(func=send_reminders)
+    parser_rem = subparsers.add_parser("send-reminders", help="Send reminders")
+    parser_rem.set_defaults(func=send_reminders)
 
     # add-event
     parser_add = subparsers.add_parser("add-event", help="Add a new event manually")

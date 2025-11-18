@@ -446,15 +446,17 @@
     </div>
 
     <!-- Events Section with Tabs -->
-    <div class="profile-section">
-        <div class="tab-header">
-            <div class="tab-item active" onclick="switchTab('registered')">
-                My Registered Events ({{ user.attending_events|length }})
-            </div>
-            <div class="tab-item" onclick="switchTab('created')">
-                My Created Events ({{ user.created_events|length }})
-            </div>
-        </div>
+    <div class="tab-header">
+    <div class="tab-item active" onclick="switchTab('registered')">
+        My Registered Events ({{ active_attending_events|length }})
+    </div>
+    <div class="tab-item" onclick="switchTab('created')">
+        My Created Events ({{ user.created_events|length }})
+    </div>
+    <div class="tab-item" onclick="window.location.href='{{ url_for('events.view_archives') }}'">
+        📦 Archived Events ({{ archived_count|default(0) }})
+    </div>
+</div>
 
         <!-- Registered Events Tab -->
         <div id="registered-tab" class="tab-content active">
@@ -597,8 +599,6 @@
     <!-- Actions -->
     <div class="profile-section">
         <div class="action-buttons">
-            <a href="#" class="btn btn-primary">Edit Profile</a>
-            <a href="#" class="btn btn-secondary">Change Password</a>
             <a href="{{ url_for('auth.logout') }}" class="btn btn-logout">Logout</a>
         </div>
     </div>

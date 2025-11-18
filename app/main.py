@@ -8,8 +8,15 @@ from sqlalchemy import or_, and_
 import qrcode
 import json
 from app import db
-from models.model import Event, EventMode, User, event_attendees, EventVisibility, Eventtag, JoinRequest , Attendee, EventNotification
+from models.model import Event, EventMode, User, event_attendees, EventVisibility, Eventtag, JoinRequest, Attendee, EventNotification
 from app.llm_service import ask_gemma
+from app.validators import (
+    EventCreateUpdateSchema, 
+    EventFilterSchema, 
+    AttendeeRegistrationSchema, 
+    MarkAttendanceSchema
+)
+from app.utils import validate_json, validate_form, validate_query
 
 main_blueprint = Blueprint("main", __name__)
 events_blueprint = Blueprint("events", __name__)
@@ -34,6 +41,7 @@ def user_profile():
     Display the user's personal profile with tabs showing:
     - Events they registered for (attending_events)
     - Events they created (created_events)
+    - Archived events count
     """
     # Get current user with all necessary relationships
     user = User.query.options(
@@ -42,7 +50,39 @@ def user_profile():
         db.joinedload(User.attendee_links)
     ).get(current_user.id)
     
-    return render_template("user_profile.html", user=user)
+    # Get archived events count
+    archived_count = Event.query.filter_by(
+        organizer_id=current_user.id,
+        is_archived=True
+    ).count()
+    
+    # ✅ FIX: Filter out archived events from attending_events
+    active_attending_events = [
+        event for event in user.attending_events 
+        if not event.is_archived
+    ]
+    
+    # ✅ FIX: Filter out archived events from created_events
+    active_created_events = [
+        event for event in user.created_events 
+        if not event.is_archived
+    ]
+    
+    # # ✅ NEW: Get saved events
+    # saved_events_query = Event.query.join(SavedEvent).filter(
+    #     SavedEvent.user_id == current_user.id,
+    #     Event.is_archived == False
+    # ).all()
+    
+    return render_template(
+        "user_profile.html", 
+        user=user, 
+        archived_count=archived_count,
+        active_attending_events=active_attending_events,
+        active_created_events=active_created_events,
+        # saved_events=saved_events_query
+    )
+
 
 @main_blueprint.route('/profile', methods=['GET'])
 @login_required
@@ -50,14 +90,7 @@ def profile():
     """
     Display all events with dynamic filtering support
     Supports multiple filters of the same type: title, organizer, tag, location, mode, date, visibility
-    """
-    
-    # DEBUG: Print received parameters
-    # print("=" * 50)
-    # print("DEBUG - Received URL parameters:")
-    # print(f"request.args: {request.args}")
-    # print("=" * 50)
-    
+    """    
     # Collect filter parameters - now supports multiple values per filter type
     filters = {
         "title": request.args.getlist("title"),
@@ -68,17 +101,10 @@ def profile():
         "date": request.args.getlist("date"),
         "visibility": request.args.getlist("visibility"),
     }
-    
-    # DEBUG: Print parsed filters
-    #print("DEBUG - Parsed filters:")
-    for key, values in filters.items():
-        if values:
-            pass
-           # print(f"  {key}: {values}")
-    #print("=" * 50)
 
     # Base query
-    query = Event.query
+    # query = Event.query
+    query = Event.query.filter_by(is_archived=False)
 
     # Apply filters with OR logic for multiple values of same type
     if filters["title"]:
@@ -153,14 +179,22 @@ def profile():
         n.event_id for n in EventNotification.query.filter_by(user_id=current_user.id).all()
     ]
 
-    # Fetch pending private requests if needed
-    user_requests = {}  # optional: populate if using private events
-
+    
+    # 2. CALCULATE THE ARCHIVED COUNT
+    # Query all events where is_archived is True for the current user (organizer)
+    archived_count = db.session.scalar(
+        db.select(db.func.count()).where(
+            Event.organizer_id == current_user.id,
+            Event.is_archived == True
+        )
+    )
+    
     return render_template(
         "profile.html",
         events=events,
         user_requests=user_requests,
-        user_notified_event_ids=user_notified_event_ids
+        user_notified_event_ids=user_notified_event_ids,
+        archived_count=archived_count 
     )
 
 
@@ -169,7 +203,7 @@ def profile():
 # -------------------------------------
 @events_blueprint.route("/", methods=["GET"])
 def list_events():
-    events = Event.query.all()
+    events = Event.query.filter_by(is_archived=False).all()
 
     user_requests = {}
     if current_user.is_authenticated:
@@ -191,53 +225,45 @@ def create_event_page():
 @events_blueprint.route("/create", methods=["POST"])
 @login_required
 def create_event():
-    data = request.get_json() if request.is_json else request.form
-
     try:
-        # Date & time
-        try:
-            date_value = datetime.strptime(data.get("date"), "%Y-%m-%d").date() if data.get("date") else None
-        except ValueError:
-            date_value = None
+        # Validate request data (support both JSON and form)
+        if request.is_json:
+            data = validate_json(EventCreateUpdateSchema)
+        else:
+            data = validate_form(EventCreateUpdateSchema)
 
-        try:
-            start_value = datetime.strptime(data.get("starttime"), "%H:%M").time() if data.get("starttime") else None
-        except ValueError:
-            start_value = None
-
-        try:
-            end_value = datetime.strptime(data.get("endtime"), "%H:%M").time() if data.get("endtime") else None
-        except ValueError:
-            end_value = None
-
-        # Mode & visibility
-        mode_value = (data.get("mode") or "online").lower()
-        visibility_value = (data.get("visibility") or "public").lower()
-
-        # Capacity
-        capacity = int(data.get("capacity") or 100)
-
+        # Create event with validated data
         event = Event(
-            title=data.get("title"),
-            description=data.get("description"),
-            date=date_value,
-            starttime=start_value,
-            endtime=end_value,
-            mode=EventMode(mode_value),
-            visibility=EventVisibility(visibility_value),
-            venue=data.get("venue"),
-            capacity=capacity,
+            title=data.title,
+            description=data.description,
+            date=data.date,
+            starttime=data.starttime,
+            endtime=data.endtime,
+            mode=EventMode(data.mode.value),
+            visibility=EventVisibility(data.visibility.value),
+            venue=data.venue,
+            capacity=data.capacity,
             organizer_id=current_user.id,
-            tags=Eventtag(data.get("tags") or ""),
+            tags=Eventtag(data.tags.value),
         )
 
         db.session.add(event)
         db.session.commit()
+        
+        if request.is_json:
+            return jsonify({
+                "message": "Event created successfully",
+                "event_id": event.id
+            }), 201
+            
         return redirect(url_for("main.profile"))
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        if request.is_json:
+            return jsonify({"error": str(e)}), 500
+        flash(f"Error creating event: {str(e)}", "danger")
+        return redirect(url_for("events.create_event_page"))
 
 
 # -------------------------------------
@@ -288,25 +314,24 @@ def update_event(event_id):
     if not event:
         return jsonify({"message": "Event not found"}), 404
 
+    # Check authorization
+    if event.organizer_id != current_user.id:
+        return jsonify({"message": "Unauthorized"}), 403
+
     try:
-        data = request.get_json()
+        # Validate request data
+        data = validate_json(EventCreateUpdateSchema)
 
-        event.title = data.get("title")
-        event.description = data.get("description")
-
-        if isinstance(data.get("date"), str):
-            event.date = datetime.strptime(data.get("date"), "%Y-%m-%d").date()
-
-        if isinstance(data.get("starttime"), str):
-            event.starttime = datetime.strptime(data["starttime"], "%H:%M").time()
-
-        if isinstance(data.get("endtime"), str):
-            event.endtime = datetime.strptime(data["endtime"], "%H:%M").time()
-
-        event.mode = EventMode(data["mode"].lower())
-        event.venue = data.get("venue")
-        event.capacity = int(data.get("capacity"))
-        event.tags = Eventtag(data.get("tags"))
+        # Update event with validated data
+        event.title = data.title
+        event.description = data.description
+        event.date = data.date
+        event.starttime = data.starttime
+        event.endtime = data.endtime
+        event.mode = EventMode(data.mode.value)
+        event.venue = data.venue
+        event.capacity = data.capacity
+        event.tags = Eventtag(data.tags.value)
 
         db.session.commit()
         return jsonify({"message": "Event updated successfully"}), 200
@@ -314,7 +339,6 @@ def update_event(event_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": str(e)}), 400
-
 
 # -------------------------------------
 # DELETE EVENT
@@ -407,7 +431,6 @@ def test_attendance_page():
     return render_template('test_attendance.html')
 
 
-
 # -------------------------------------
 # PROCESS QR CODE SCAN (Mark attendance)
 # -------------------------------------
@@ -417,29 +440,20 @@ def mark_attendance():
     """
     Process scanned QR code data and mark attendance
     """
-    data = request.get_json()
-    if not data:
-        return jsonify({"error": "No data received"}), 400
-
-    attendee_id = data.get("attendee_id")
-    event_id = data.get("event_id")
-    user_id = data.get("user_id")
-    token = data.get("token")
-
-    if not all([attendee_id, event_id, user_id, token]):
-        return jsonify({"error": "Missing required fields"}), 400
+    # Validate request data
+    data = validate_json(MarkAttendanceSchema)
 
     # Verify event exists and current user is organizer
-    event = Event.query.get_or_404(event_id)
+    event = Event.query.get_or_404(data.event_id)
     if event.organizer_id != current_user.id:
         return jsonify({"error": "Unauthorized"}), 403
 
     # Find attendee record
     attendee = Attendee.query.filter_by(
-        id=attendee_id,
-        event_id=event_id,
-        user_id=user_id,
-        token=token
+        id=data.attendee_id,
+        event_id=data.event_id,
+        user_id=data.user_id,
+        token=data.token
     ).first()
 
     if not attendee:
@@ -468,17 +482,32 @@ def mark_attendance():
 # -------------------------------------
 # REGISTER FOR EVENT (PUBLIC/PRIVATE LOGIC)
 # -------------------------------------
+# -------------------------------------
+# REGISTER FOR EVENT (PUBLIC/PRIVATE LOGIC)
+# -------------------------------------
 @attendees_blueprint.route("/register", methods=["POST"])
 @login_required
 def create_attendee():
-    event_id = request.form.get("eventId")
-    if not event_id:
-        return "eventId missing", 400
+    try:
+        # Validate registration data (support both JSON and form)
+        if request.is_json:
+            data = validate_json(AttendeeRegistrationSchema)
+        else:
+            data = validate_form(AttendeeRegistrationSchema)
+        event_id = data.eventId
+    except Exception as e:
+        print(f"Validation Error: {str(e)}")
+        if request.is_json:
+            return jsonify({"error": f"Validation error: {str(e)}"}), 422
+        flash(f"Validation error: {str(e)}", "danger")
+        return redirect(url_for("main.profile"))
 
     event = Event.query.get_or_404(event_id)
 
     # Organizer cannot register for their own event
     if event.organizer_id == current_user.id:
+        if request.is_json:
+            return jsonify({"error": "You cannot register for your own event!"}), 403
         flash("You cannot register for your own event!", "danger")
         return redirect(url_for("main.profile"))
 
@@ -489,6 +518,8 @@ def create_attendee():
     ).first()
     
     if existing_attendee or current_user in event.attendees:
+        if request.is_json:
+            return jsonify({"error": "You are already registered for this event!"}), 400
         flash("You are already registered for this event!", "warning")
         return redirect(url_for("main.profile"))
 
@@ -508,6 +539,8 @@ def create_attendee():
             db.session.add(new_req)
             db.session.commit()
 
+        if request.is_json:
+            return jsonify({"message": "Join request sent! Please wait for approval."}), 200
         flash("Join request sent! Please wait for approval.", "info")
         return redirect(url_for("main.profile"))
 
@@ -515,6 +548,8 @@ def create_attendee():
     # Check capacity
     current_attendees = Attendee.query.filter_by(event_id=event_id).count()
     if current_attendees >= event.capacity:
+        if request.is_json:
+            return jsonify({"error": "Sorry, this event is full!"}), 400
         flash("Sorry, this event is full!", "danger")
         return redirect(url_for("main.profile"))
 
@@ -570,6 +605,13 @@ def create_attendee():
     attendee.qr_code_path = f"qr_codes/{qr_filename}"
 
     db.session.commit()
+
+    if request.is_json:
+        return jsonify({
+            "message": "Successfully registered for the event!",
+            "attendee_id": attendee.id,
+            "qr_code_path": attendee.qr_code_path
+        }), 201
 
     flash("Successfully registered for the event!", "success")
     return redirect(url_for("attendees.registration_success", attendee_id=attendee.id))
@@ -705,7 +747,8 @@ def live_events():
     live_events = Event.query.filter(
         Event.date == today,
         Event.starttime <= current_time,
-        Event.endtime >= current_time
+        Event.endtime >= current_time,
+        Event.is_archived == False
     ).all()
 
     return render_template("live.html", events=live_events, now=now)
@@ -732,9 +775,7 @@ def view_join_requests(event_id):
 # MY EVENTS PAGE (Organizers & Admin)
 # -------------------------------------
 @events_blueprint.route('/my-events', methods=['GET', 'POST'])
-
 def my_events_page():
-
     search_query = ""
 
     # If form submitted
@@ -784,3 +825,95 @@ def toggle_notification():
             db.session.delete(notif)
             db.session.commit()
         return jsonify({"message": f"Notifications disabled for event {event_id}"})
+
+
+# -------------------------------------
+# VIEW ARCHIVED EVENTS
+# -------------------------------------
+@events_blueprint.route("/archives", methods=["GET"])
+@login_required
+def view_archives():
+    """View all archived events created by current user"""
+    archived_events = Event.query.filter_by(
+        organizer_id=current_user.id,
+        is_archived=True
+    ).order_by(Event.date.desc()).all()
+
+    return render_template("archives.html", events=archived_events)
+
+
+# -------------------------------------
+# RECREATE EVENT FROM ARCHIVE
+# -------------------------------------
+@events_blueprint.route("/recreate/<int:event_id>", methods=["GET"])
+@login_required
+def recreate_from_archive(event_id):
+    """Load archived event data into a NEW recreation form"""
+    event = Event.query.get_or_404(event_id)
+
+    # Only organizer can recreate their own events
+    if event.organizer_id != current_user.id:
+        flash("You are not authorized to recreate this event!", "danger")
+        return redirect(url_for("events.view_archives"))
+
+    # Must be archived
+    if not event.is_archived:
+        flash("This event is not archived!", "warning")
+        return redirect(url_for("main.profile"))
+
+    # Render NEW recreate form with event data
+    # Pass 'now' variable for date validation
+    return render_template("recreate.html", event=event, now=datetime.now())
+
+@events_blueprint.route("/recreate/<int:event_id>", methods=["POST"])
+@login_required
+def process_recreation(event_id):
+    """Process recreation of archived event"""
+    archived_event = Event.query.get_or_404(event_id)
+
+    # Security check
+    if archived_event.organizer_id != current_user.id:
+        flash("Unauthorized!", "danger")
+        return redirect(url_for("events.view_archives"))
+
+    try:
+        # Validate request data (support both JSON and form)
+        if request.is_json:
+            data = validate_json(EventCreateUpdateSchema)
+        else:
+            data = validate_form(EventCreateUpdateSchema)
+
+        # Create NEW event from archived data
+        new_event = Event(
+            title=data.title,
+            description=data.description,
+            date=data.date,
+            starttime=data.starttime,
+            endtime=data.endtime,
+            mode=EventMode(data.mode.value),
+            visibility=EventVisibility(data.visibility.value),
+            venue=data.venue,
+            capacity=data.capacity,
+            organizer_id=current_user.id,
+            tags=Eventtag(data.tags.value),
+            is_archived=False  # New event is NOT archived
+        )
+
+        db.session.add(new_event)
+        db.session.commit()
+        
+        if request.is_json:
+            return jsonify({
+                "message": "Event recreated successfully",
+                "event_id": new_event.id
+            }), 201
+            
+        flash("Event recreated successfully!", "success")
+        return redirect(url_for("main.profile"))
+
+    except Exception as e:
+        db.session.rollback()
+        if request.is_json:
+            return jsonify({"error": str(e)}), 500
+        flash(f"Error recreating event: {str(e)}", "danger")
+        return redirect(url_for("events.view_archives"))

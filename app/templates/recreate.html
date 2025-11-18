@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+{% block title %}Recreate Event | EventHive{% endblock %}
+
+{% block extra_css %}
+<style>
+body {
+    background: linear-gradient(120deg, #0a0a0a, #003300);
+    font-family: 'Poppins', sans-serif;
+}
+
+.recreate-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 30px;
+    background: rgba(17, 17, 17, 0.95);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+    border-left: 5px solid #FFA726;
+    backdrop-filter: blur(10px);
+    color: #f0f0f0;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.page-header h2 {
+    color: #FFA726;
+    font-size: 32px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.page-header p {
+    color: #ccc;
+    font-size: 16px;
+}
+
+.info-banner {
+    background: rgba(255, 167, 38, 0.1);
+    border-left: 4px solid #FFA726;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    color: #FFA726;
+    font-size: 14px;
+}
+
+.info-banner strong {
+    font-weight: 600;
+}
+
+.original-event-info {
+    background: rgba(76, 175, 80, 0.1);
+    border-left: 4px solid #4CAF50;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    color: #4CAF50;
+    font-size: 14px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    color: #FFA726;
+    font-weight: 500;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.form-control,
+.form-select {
+    width: 100%;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 167, 38, 0.3);
+    border-radius: 8px;
+    color: #f0f0f0;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.form-control:focus,
+.form-select:focus {
+    outline: none;
+    border-color: #FFA726;
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 0 2px rgba(255, 167, 38, 0.1);
+}
+
+.form-control::placeholder {
+    color: #888;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 12px 25px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 15px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: #4CAF50;
+    color: #fff;
+    flex: 1;
+}
+
+.btn-primary:hover { 
+    background: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 2px solid #FFA726;
+    color: #FFA726;
+}
+
+.btn-secondary:hover {
+    background: #FFA726;
+    color: #111;
+    transform: translateY(-2px);
+}
+
+.required {
+    color: #f44336;
+}
+
+@media (max-width: 768px) {
+    .recreate-container {
+        padding: 20px;
+        margin: 20px 15px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="recreate-container">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <h2>
+            🔄 Recreate Event
+        </h2>
+        <p>Create a new event based on archived event data</p>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="info-banner">
+        <strong>ℹ️ Note:</strong> You are recreating the event "{{ event.title }}". 
+        Update the details below and submit to create a new active event.
+    </div>
+
+    <!-- Original Event Info -->
+    <div class="original-event-info">
+        <strong>📋 Original Event:</strong> {{ event.title }}<br>
+        <strong>Original Date:</strong> {{ event.date.strftime('%d %b %Y') }}<br>
+        <strong>Status:</strong> Archived
+    </div>
+
+    <!-- Recreation Form -->
+    <form method="POST" action="{{ url_for('events.process_recreation', event_id=event.id) }}">
+        
+        <!-- Title -->
+        <div class="form-group">
+            <label class="form-label">Event Title <span class="required">*</span></label>
+            <input type="text" 
+                   name="title" 
+                   class="form-control" 
+                   value="{{ event.title }}" 
+                   placeholder="Enter event title"
+                   required>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea name="description" 
+                      class="form-control" 
+                      placeholder="Enter event description">{{ event.description or '' }}</textarea>
+        </div>
+
+        <!-- Date -->
+        <div class="form-group">
+            <label class="form-label">Event Date <span class="required">*</span></label>
+            <input type="date" 
+                   name="date" 
+                   class="form-control" 
+                   value="{{ event.date.strftime('%Y-%m-%d') }}"
+                   min="{{ now.strftime('%Y-%m-%d') }}"
+                   required>
+        </div>
+
+        <!-- Time Row -->
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Start Time</label>
+                <input type="time" 
+                       name="starttime" 
+                       class="form-control" 
+                       value="{{ event.starttime.strftime('%H:%M') if event.starttime else '' }}">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">End Time</label>
+                <input type="time" 
+                       name="endtime" 
+                       class="form-control" 
+                       value="{{ event.endtime.strftime('%H:%M') if event.endtime else '' }}">
+            </div>
+        </div>
+
+        <!-- Mode & Visibility Row -->
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Event Mode <span class="required">*</span></label>
+                <select name="mode" class="form-select" required>
+                    <option value="online" {% if event.mode.value == 'online' %}selected{% endif %}>Online</option>
+                    <option value="offline" {% if event.mode.value == 'offline' %}selected{% endif %}>Offline</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Visibility <span class="required">*</span></label>
+                <select name="visibility" class="form-select" required>
+                    <option value="public" {% if event.visibility.value == 'public' %}selected{% endif %}>Public</option>
+                    <option value="private" {% if event.visibility.value == 'private' %}selected{% endif %}>Private</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Venue -->
+        <div class="form-group">
+            <label class="form-label">Venue</label>
+            <input type="text" 
+                   name="venue" 
+                   class="form-control" 
+                   value="{{ event.venue or '' }}"
+                   placeholder="Enter venue location">
+        </div>
+
+        <!-- Capacity & Tags Row -->
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Capacity <span class="required">*</span></label>
+                <input type="number" 
+                       name="capacity" 
+                       class="form-control" 
+                       value="{{ event.capacity }}"
+                       min="1" 
+                       max="10000"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Event Tag <span class="required">*</span></label>
+                <select name="tags" class="form-select" required>
+                    <option value="Workshop" {% if event.tags.value == 'Workshop' %}selected{% endif %}>Workshop</option>
+                    <option value="Seminar" {% if event.tags.value == 'Seminar' %}selected{% endif %}>Seminar</option>
+                    <option value="Meeting" {% if event.tags.value == 'Meeting' %}selected{% endif %}>Meeting</option>
+                    <option value="Conference" {% if event.tags.value == 'Conference' %}selected{% endif %}>Conference</option>
+                    <option value="Party" {% if event.tags.value == 'Party' %}selected{% endif %}>Party</option>
+                    <option value="Celebration" {% if event.tags.value == 'Celebration' %}selected{% endif %}>Celebration</option>
+                    <option value="Networking" {% if event.tags.value == 'Networking' %}selected{% endif %}>Networking</option>
+                    <option value="Fundraiser" {% if event.tags.value == 'Fundraiser' %}selected{% endif %}>Fundraiser</option>
+                    <option value="Competition" {% if event.tags.value == 'Competition' %}selected{% endif %}>Competition</option>
+                    <option value="Performance" {% if event.tags.value == 'Performance' %}selected{% endif %}>Performance</option>
+                    <option value="Festival" {% if event.tags.value == 'Festival' %}selected{% endif %}>Festival</option>
+                    <option value="Webinar" {% if event.tags.value == 'Webinar' %}selected{% endif %}>Webinar</option>
+                    <option value="Training" {% if event.tags.value == 'Training' %}selected{% endif %}>Training</option>
+                    <option value="Sports" {% if event.tags.value == 'Sports' %}selected{% endif %}>Sports</option>
+                    <option value="Trip" {% if event.tags.value == 'Trip' %}selected{% endif %}>Trip</option>
+                    <option value="Volunteering" {% if event.tags.value == 'Volunteering' %}selected{% endif %}>Volunteering</option>
+                    <option value="Hackathon" {% if event.tags.value == 'Hackathon' %}selected{% endif %}>Hackathon</option>
+                    <option value="Launch" {% if event.tags.value == 'Launch' %}selected{% endif %}>Launch</option>
+                    <option value="Cultural" {% if event.tags.value == 'Cultural' %}selected{% endif %}>Cultural</option>
+                    <option value="Educational" {% if event.tags.value == 'Educational' %}selected{% endif %}>Educational</option>
+                    <option value="Entertainment" {% if event.tags.value == 'Entertainment' %}selected{% endif %}>Entertainment</option>
+                    <option value="Social" {% if event.tags.value == 'Social' %}selected{% endif %}>Social</option>
+                    <option value="Professional" {% if event.tags.value == 'Professional' %}selected{% endif %}>Professional</option>
+                    <option value="Tech" {% if event.tags.value == 'Tech' %}selected{% endif %}>Tech</option>
+                    <option value="Art" {% if event.tags.value == 'Art' %}selected{% endif %}>Art</option>
+                    <option value="Music" {% if event.tags.value == 'Music' %}selected{% endif %}>Music</option>
+                    <option value="Food" {% if event.tags.value == 'Food' %}selected{% endif %}>Food</option>
+                    <option value="Health" {% if event.tags.value == 'Health' %}selected{% endif %}>Health</option>
+                    <option value="Environment" {% if event.tags.value == 'Environment' %}selected{% endif %}>Environment</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button type="submit" class="btn btn-primary">
+                ✨ Create New Event
+            </button>
+            <a href="{{ url_for('events.view_archives') }}" class="btn btn-secondary">
+                Cancel
+            </a>
+        </div>
+
+    </form>
+
+</div>
+
+<script>
+    // Set minimum date to today
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.querySelector('input[name="date"]');
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.setAttribute('min', today);
+    });
+</script>
+
+{% endblock %}
