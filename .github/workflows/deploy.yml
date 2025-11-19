@@ -19,8 +19,6 @@ jobs:
           script: |
             echo "===== FIX SSH CONFIG ====="
             sudo bash -c 'echo "CASignatureAlgorithms +ssh-rsa" > /etc/ssh/sshd_config.d/custom.conf'
-            sudo systemctl restart ssh
-
             echo "===== FIX SSH PERMISSIONS ====="
             chmod 700 ~/.ssh || true
             chmod 600 ~/.ssh/authorized_keys || true
