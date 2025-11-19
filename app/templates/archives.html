@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+{% block title %}Archived Events | EventHive{% endblock %}
+
+{% block extra_css %}
+<style>
+/* --------------------------------------------------
+   GENERAL CONTAINER
+-------------------------------------------------- */
+body {
+    background: linear-gradient(120deg, #0a0a0a, #003300);
+    font-family: 'Poppins', sans-serif;
+}
+
+.archive-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 20px;
+    color: #f0f0f0;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.page-header h2 {
+    color: #4CAF50;
+    font-size: 32px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.page-header p {
+    color: #ccc;
+    font-size: 16px;
+}
+
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: 2px solid #4CAF50;
+    color: #4CAF50;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.3s;
+    margin-bottom: 20px;
+}
+
+.back-button:hover {
+    background: #4CAF50;
+    color: #111;
+    transform: translateY(-2px);
+}
+
+/* --------------------------------------------------
+   EVENT CARDS
+-------------------------------------------------- */
+.events-section {
+    margin-top: 30px;
+}
+
+.section-title {
+    color: #4CAF50;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #4CAF50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.event-count {
+    font-size: 14px;
+    color: #888;
+    font-weight: 400;
+}
+
+.event-card {
+    background: rgba(17, 17, 17, 0.9);
+    border-left: 5px solid #FFA726; /* Orange for archived */
+    border-radius: 12px;
+    margin-bottom: 20px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+    color: #f0f0f0;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+    position: relative;
+}
+
+.event-card::before {
+    content: "ARCHIVED";
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 167, 38, 0.2);
+    color: #FFA726;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border: 1px solid #FFA726;
+}
+
+.event-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(255, 167, 38, 0.3);
+}
+
+.event-title {
+    font-size: 22px;
+    margin-bottom: 12px;
+    color: #FFA726;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.event-meta {
+    color: #ccc;
+    line-height: 1.8;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.event-meta strong {
+    color: #FFA726;
+}
+
+.visibility-tag {
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    color: #fff;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.visibility-tag.public {
+    background: #2e7d32;
+}
+
+.visibility-tag.private {
+    background: #c62828;
+}
+
+/* Buttons */
+.event-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+.recreate-btn,
+.unarchive-btn,
+.delete-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s;
+}
+
+.recreate-btn {
+    background: #4CAF50;
+    color: #fff;
+}
+.recreate-btn:hover { 
+    background: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+}
+
+.unarchive-btn {
+    background: #2196F3;
+    color: #fff;
+}
+.unarchive-btn:hover { 
+    background: #1976D2;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+}
+
+.delete-btn {
+    background: #dc3545;
+    color: #fff;
+}
+.delete-btn:hover { 
+    background: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+}
+
+/* No Events State */
+.no-events {
+    text-align: center;
+    padding: 80px 20px;
+    color: #888;
+    background: rgba(17, 17, 17, 0.5);
+    border-radius: 12px;
+    border: 2px dashed rgba(255, 167, 38, 0.3);
+}
+
+.no-events-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    opacity: 0.3;
+}
+
+.no-events h3 {
+    color: #FFA726;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.no-events p {
+    color: #ccc;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+.primary-btn {
+    display: inline-block;
+    background: #4CAF50;
+    color: #111;
+    padding: 12px 25px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 15px;
+    transition: all 0.3s;
+}
+
+.primary-btn:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+}
+
+/* Info Box */
+.info-box {
+    background: rgba(255, 167, 38, 0.1);
+    border-left: 4px solid #FFA726;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    color: #FFA726;
+    font-size: 14px;
+}
+
+.info-box strong {
+    font-weight: 600;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .archive-container {
+        padding: 15px;
+        margin: 20px auto;
+    }
+
+    .page-header h2 {
+        font-size: 24px;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .event-title {
+        font-size: 18px;
+    }
+
+    .event-actions {
+        flex-direction: column;
+    }
+
+    .event-actions > * {
+        width: 100%;
+        text-align: center;
+    }
+
+    .section-title {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="archive-container">
+
+    <!-- Back Button -->
+    <a href="{{ url_for('main.profile') }}" class="back-button">
+        ← Back to Events
+    </a>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <h2>
+            📦 Archived Events
+        </h2>
+        <p>Manage your archived events - recreate, restore, or delete permanently</p>
+    </div>
+
+    <!-- Info Box -->
+    <div class="info-box">
+        <strong>ℹ️ About Archives:</strong> Archived events are hidden from public listings. 
+        You can recreate them with pre-filled data or restore them to active status.
+    </div>
+
+    <!-- Events Section -->
+    <div class="events-section">
+        <h2 class="section-title">
+            Your Archived Events
+            <span class="event-count">{{ events|length }} event{{ 's' if events|length != 1 else '' }}</span>
+        </h2>
+
+        {% if events %}
+            {% for event in events %}
+            <div class="event-card">
+
+                <div class="event-title">
+                    {{ event.title }}
+                    <span class="visibility-tag {{ 'private' if event.visibility.value=='private' else 'public' }}">
+                        {{ event.visibility.value }}
+                    </span>
+                </div>
+
+                <div class="event-meta">
+                    <strong>Description:</strong> {{ event.description or 'No description provided' }}<br>
+                    <strong>Original Date:</strong> {{ event.date.strftime('%d %b %Y') }}<br>
+                    {% if event.starttime and event.endtime %}
+                    <strong>Time:</strong> {{ event.starttime.strftime('%I:%M %p') }} - {{ event.endtime.strftime('%I:%M %p') }}<br>
+                    {% endif %}
+                    <strong>Location:</strong> {{ event.venue or 'Not specified' }}<br>
+                    <strong>Tag:</strong> {{ event.tags.value }} |
+                    <strong>Mode:</strong> {{ event.mode.value.capitalize() }} |
+                    <strong>Capacity:</strong> {{ event.capacity }}
+                </div>
+
+                <div class="event-actions">
+                    <!-- Recreate Button -->
+                    <a href="{{ url_for('events.recreate_from_archive', event_id=event.id) }}"
+                       class="recreate-btn">
+                        🔄 Recreate Event
+                    </a>
+
+                    <!-- Delete Permanently Button -->
+                    <form action="{{ url_for('events.delete_event', event_id=event.id) }}"
+                          method="POST"
+                          style="display:inline;"
+                          onsubmit="return confirm('⚠️ Permanently delete this archived event? This action cannot be undone!');">
+                        <button type="submit" class="delete-btn">
+                            🗑️ Delete Forever
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-events">
+                <div class="no-events-icon">📦</div>
+                <h3>No Archived Events</h3>
+                <p>You haven't archived any events yet. Archive events to save them for later recreation.</p>
+                <a href="{{ url_for('main.profile') }}" class="primary-btn">
+                    View Active Events
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Confirmation Script -->
+<script>
+    // Add smooth animations
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.event-card');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+    });
+</script>
+
+{% endblock %}
