@@ -1,0 +1,14 @@
+
+version: "3.9"
+
+services:
+  web:
+    build: .
+    container_name: flaskapp
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+    volumes:
+      - .:/app
