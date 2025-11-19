@@ -35,7 +35,7 @@ jobs:
 
             if [ ! -d ".git" ]; then
               echo "No git repo found. Cloning..."
-              git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git .
+              git clone https://github.com/Event-Hive-25/event_hive_app.git .
             else
               echo "Repo exists. Pulling latest changes..."
               git reset --hard
