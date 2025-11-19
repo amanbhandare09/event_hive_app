@@ -14,9 +14,20 @@ migrate = Migrate()
 def create_app():
     app = Flask(__name__)
 
-    # Database configuration
+    DB_URI = "mysql+pymysql://admin:eventhive25@eventhive-db.cf2u4ey4ohk5.ap-south-1.rds.amazonaws.com:3306/eventhive_mysql"
+    
     app.config['SECRET_KEY'] = '91ba96dbf66221f753176c6a80f0e7905444d410630b70f89445e7281d0001aa'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+    app.config['SQLALCHEMY_DATABASE_URI'] = DB_URI          # ← fixed the missing "A" in SQLALCHEMY
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False     # ← prevents warnings + helps stability
+
+    # Add these 3 lines for reliable RDS connection (very important for AWS)
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 3600,
+    'connect_args': {
+        'ssl': {'ssl-mode': 'REQUIRED'}   # ← THIS IS THE CORRECT PyMySQL WAY
+        }
+    }
 
     db.init_app(app)
     migrate.init_app(app, db)
