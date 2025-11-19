@@ -3,7 +3,7 @@ name: Deploy EventHive App
 on:
   push:
     branches:
-      - Sanket3212-patch-4
+      - main
 
 jobs:
   deploy:
