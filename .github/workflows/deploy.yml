@@ -17,6 +17,12 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            echo "===== FIX SSH PERMISSIONS ====="
+            chmod 700 ~/.ssh || true
+            chmod 600 ~/.ssh/authorized_keys || true
+            echo "===== CURRENT AUTHORIZED KEYS ====="
+            cat ~/.ssh/authorized_keys || true
+
             echo "===== INSTALL DOCKER IF NOT INSTALLED ====="
             if ! command -v docker &> /dev/null
             then
