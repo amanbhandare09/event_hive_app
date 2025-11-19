@@ -1,120 +1,208 @@
 {% extends "base.html" %}
 
+{% block title %}Live Events | EventHub{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Body background is inherited from base.html (var(--body-background): #f5f9ff) */
+    
+    /* --- Event List Container --- */
+    .event-list-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 0 20px;
+        color: var(--primary-text);
+    }
+
+    h2 {
+        color: var(--deep-title-blue); /* #003d99 */
+        margin-bottom: 30px;
+        font-weight: 700;
+        font-size: 26px;
+        text-align: center;
+    }
+
+    /* --- Event Card (UI Improvement) --- */
+    .event-card {
+        /* Light Card Style */
+        background: var(--card-background); /* #ffffff */
+        margin-bottom: 25px;
+        padding: 25px;
+        border-radius: 12px;
+        border: 1px solid var(--event-card-border); /* #d2e4ff */
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.08);
+        transition: transform 0.3s, box-shadow 0.3s;
+        /* Layout */
+        display: flex;
+        flex-direction: column;
+    }
+
+    .event-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 123, 255, 0.15);
+    }
+
+    .event-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px dashed var(--navbar-border);
+        padding-bottom: 10px;
+    }
+
+    .event-title {
+        font-size: 20px;
+        color: var(--section-title-blue); /* #004099 */
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    .event-tag {
+        display: inline-block;
+        background: var(--hover-light-blue);
+        color: var(--primary-blue);
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    /* --- Metadata and Description --- */
+    .event-description {
+        color: var(--secondary-grey-text);
+        margin-bottom: 15px;
+    }
+    
+    .event-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px 30px;
+        margin-top: 10px;
+    }
+
+    .meta-item strong {
+        color: var(--primary-text);
+        font-weight: 600;
+    }
+    
+    /* --- Countdown and Actions --- */
+    .event-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 15px;
+        margin-top: auto;
+        border-top: 1px solid var(--navbar-border);
+    }
+
+    .countdown {
+        /* Active countdown color */
+        color: var(--primary-blue);
+        font-weight: 700;
+        font-size: 1.1em;
+        margin: 0;
+    }
+
+    .countdown.ended {
+        color: #dc3545 !important; /* Error Red */
+    }
+
+    .action-btn {
+        background-color: var(--primary-blue);
+        color: #fff;
+        padding: 10px 18px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s;
+        border: none;
+        font-size: 14px;
+    }
+
+    .action-btn:hover {
+        background-color: var(--primary-dark-blue);
+        transform: translateY(-1px);
+    }
+
+    @media (max-width: 600px) {
+        .event-header, .event-footer {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<style>
-  body {
-    font-family: 'Poppins', sans-serif;
-    background: linear-gradient(120deg, #0a0a0a, #003300);
-    color: #f0f0f0;
-    margin: 0;
-    padding: 0;
-  }
+<div class="event-list-container">
+    <h2>🔴 Live Events</h2>
 
-  header {
-    background-color: #111;
-    padding: 15px 40px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
+    {% if events %}
+        {% for event in events %}
+            {% set end_datetime = event.date | string + 'T' + event.endtime.strftime('%H:%M:%S') %}
+            <div class="event-card">
+                
+                <div class="event-header">
+                    <div class="event-title">{{ event.title }}</div>
+                    <span class="event-tag">{{ event.tags.value if event.tags else 'General' }}</span>
+                </div>
+                
+                <p class="event-description">{{ event.description | truncate(150, true) }}</p>
+                
+                <div class="event-meta">
+                    <span class="meta-item"><strong>Venue:</strong> {{ event.venue }}</span>
+                    <span class="meta-item"><strong>Time:</strong> {{ event.starttime.strftime('%I:%M %p') }} - {{ event.endtime.strftime('%I:%M %p') }}</span>
+                </div>
 
-  .logo {
-    font-size: 24px;
-    font-weight: bold;
-    color: #4CAF50;
-  }
+                <div class="event-footer">
+                    <p class="countdown" id="countdown-{{ loop.index }}">Loading countdown...</p>
+                    <a href="{{ url_for('attendees.scan_qr_page', event_id=event.id) }}" class="action-btn">Manage Live Event</a>
+                </div>
 
-  .event-container {
-    max-width: 800px;
-    margin: 40px auto;
-    background-color: #1a1a1a;
-    padding: 20px 30px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-  }
+                <script>
+                    // Note: Date formatting needs to be exact for JS Date() constructor
+                    const endTime{{ loop.index }} = new Date("{{ end_datetime }}");
+                    const countdownEl{{ loop.index }} = document.getElementById("countdown-{{ loop.index }}");
 
-  .event-card {
-    border-left: 5px solid #4CAF50;
-    margin-bottom: 20px;
-    padding: 20px;
-    border-radius: 8px;
-    background: #222;
-  }
+                    function updateCountdown{{ loop.index }}() {
+                        const now = new Date();
+                        const diff = endTime{{ loop.index }} - now;
 
-  .event-title {
-    font-size: 20px;
-    color: #4CAF50;
-    margin-bottom: 10px;
-  }
+                        if (diff <= 0) {
+                            countdownEl{{ loop.index }}.textContent = "Event Ended";
+                            countdownEl{{ loop.index }}.classList.add('ended');
+                            return;
+                        }
 
-  .countdown {
-    color: #ffcc00;
-    font-weight: bold;
-    margin-top: 10px;
-  }
+                        // Calculate time remaining
+                        const totalSeconds = Math.floor(diff / 1000);
+                        const days = Math.floor(totalSeconds / (3600 * 24));
+                        const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+                        const minutes = Math.floor((totalSeconds % 3600) / 60);
+                        const seconds = totalSeconds % 60;
 
-  .back-btn {
-    background-color: #4CAF50;
-    color: #fff;
-    padding: 10px 16px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 500;
-    transition: background-color 0.3s;
-  }
+                        let timeString = '';
+                        if (days > 0) timeString += `${days}d `;
+                        timeString += `${hours}h ${minutes}m ${seconds}s`;
 
-  .back-btn:hover {
-    background-color: #45a049;
-  }
-</style>
+                        countdownEl{{ loop.index }}.textContent = `Ends in ${timeString}`;
+                    }
 
+                    // Run immediately and then every second
+                    updateCountdown{{ loop.index }}();
+                    setInterval(updateCountdown{{ loop.index }}, 1000);
+                </script>
 
-
-<div class="event-container">
-  <h2>🔴 Live Events</h2>
-
-  {% if events %}
-    {% for event in events %}
-      <div class="event-card">
-        <div class="event-title">{{ event.title }}</div>
-        <p>{{ event.description }}</p>
-        <p><strong>Venue:</strong> {{ event.venue }}</p>
-        <p><strong>Time:</strong> {{ event.starttime.strftime('%I:%M %p') }} - {{ event.endtime.strftime('%I:%M %p') }}</p>
-
-        <p class="countdown" id="countdown-{{ loop.index }}">Loading countdown...</p>
-
-        <script>
-          const endTime{{ loop.index }} = new Date("{{ event.date }}T{{ event.endtime.strftime('%H:%M:%S') }}");
-
-          function updateCountdown{{ loop.index }}() {
-            const now = new Date();
-            const diff = endTime{{ loop.index }} - now;
-            const countdownEl = document.getElementById("countdown-{{ loop.index }}");
-
-            if (diff <= 0) {
-              countdownEl.textContent = "Event Ended";
-              countdownEl.style.color = "red";
-              return;
-            }
-
-            const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-            const minutes = Math.floor((diff / (1000 * 60)) % 60);
-            const seconds = Math.floor((diff / 1000) % 60);
-
-            countdownEl.textContent = `Ends in ${hours}h ${minutes}m ${seconds}s`;
-          }
-
-          setInterval(updateCountdown{{ loop.index }}, 1000);
-          updateCountdown{{ loop.index }}();
-        </script>
-
-      </div>
-    {% endfor %}
-  {% else %}
-    <p>No live events right now.</p>
-  {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="event-container" style="text-align: center; padding: 50px; background: white; border: 1px solid var(--navbar-border); border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);">
+            <p style="color: var(--secondary-grey-text);">No events are currently marked as live.</p>
+        </div>
+    {% endif %}
 </div>
 
 {% endblock %}
