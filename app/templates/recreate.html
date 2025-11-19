@@ -3,179 +3,194 @@
 
 {% block extra_css %}
 <style>
-body {
-    background: linear-gradient(120deg, #0a0a0a, #003300);
-    font-family: 'Poppins', sans-serif;
-}
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: #f5f9ff;
+        color: #1a1a1a;
+        line-height: 1.6;
+    }
 
-.recreate-container {
-    max-width: 800px;
-    margin: 40px auto;
-    padding: 30px;
-    background: rgba(17, 17, 17, 0.95);
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.7);
-    border-left: 5px solid #FFA726;
-    backdrop-filter: blur(10px);
-    color: #f0f0f0;
-}
-
-.page-header {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.page-header h2 {
-    color: #FFA726;
-    font-size: 32px;
-    font-weight: 600;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-}
-
-.page-header p {
-    color: #ccc;
-    font-size: 16px;
-}
-
-.info-banner {
-    background: rgba(255, 167, 38, 0.1);
-    border-left: 4px solid #FFA726;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 25px;
-    color: #FFA726;
-    font-size: 14px;
-}
-
-.info-banner strong {
-    font-weight: 600;
-}
-
-.original-event-info {
-    background: rgba(76, 175, 80, 0.1);
-    border-left: 4px solid #4CAF50;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 25px;
-    color: #4CAF50;
-    font-size: 14px;
-}
-
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-label {
-    display: block;
-    color: #FFA726;
-    font-weight: 500;
-    margin-bottom: 8px;
-    font-size: 14px;
-}
-
-.form-control,
-.form-select {
-    width: 100%;
-    padding: 12px;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 167, 38, 0.3);
-    border-radius: 8px;
-    color: #f0f0f0;
-    font-size: 14px;
-    transition: all 0.3s;
-}
-
-.form-control:focus,
-.form-select:focus {
-    outline: none;
-    border-color: #FFA726;
-    background: rgba(0, 0, 0, 0.6);
-    box-shadow: 0 0 0 2px rgba(255, 167, 38, 0.1);
-}
-
-.form-control::placeholder {
-    color: #888;
-}
-
-textarea.form-control {
-    resize: vertical;
-    min-height: 100px;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
-
-.action-buttons {
-    display: flex;
-    gap: 15px;
-    margin-top: 30px;
-    flex-wrap: wrap;
-}
-
-.btn {
-    padding: 12px 25px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 15px;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.btn-primary {
-    background: #4CAF50;
-    color: #fff;
-    flex: 1;
-}
-
-.btn-primary:hover { 
-    background: #45a049;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
-}
-
-.btn-secondary {
-    background: transparent;
-    border: 2px solid #FFA726;
-    color: #FFA726;
-}
-
-.btn-secondary:hover {
-    background: #FFA726;
-    color: #111;
-    transform: translateY(-2px);
-}
-
-.required {
-    color: #f44336;
-}
-
-@media (max-width: 768px) {
     .recreate-container {
-        padding: 20px;
-        margin: 20px 15px;
+        max-width: 800px;
+        margin: 60px auto;
+        padding: 40px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 30px rgba(0, 123, 255, 0.12);
+        border: 1px solid #dbe7ff;
+    }
+
+    /* Page Header */
+    .page-header {
+        text-align: center;
+        margin-bottom: 35px;
+    }
+
+    .page-header h2 {
+        color: #003d99;
+        font-size: 2.3rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+    }
+
+    .page-header p {
+        color: #555;
+        font-size: 16px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    /* Info Banners */
+    .info-banner {
+        background: #e7f3ff;
+        border-left: 5px solid #007bff;
+        padding: 18px;
+        border-radius: 10px;
+        margin-bottom: 28px;
+        color: #003d99;
+        font-size: 15px;
+        box-shadow: 0 2px 10px rgba(0, 123, 255, 0.08);
+    }
+
+    .info-banner strong {
+        color: #007bff;
+        font-weight: 600;
+    }
+
+    .original-event-info {
+        background: #d4edda;
+        border-left: 5px solid #28a745;
+        padding: 18px;
+        border-radius: 10px;
+        margin-bottom: 28px;
+        color: #155724;
+        font-size: 15px;
+    }
+
+    /* Form Styling */
+    .form-group {
+        margin-bottom: 22px;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        color: #004099;
+        margin-bottom: 8px;
+        font-size: 15px;
+    }
+
+    .form-control,
+    .form-select {
+        width: 100%;
+        padding: 14px;
+        border-radius: 10px;
+        border: 1px solid #c9ddff;
+        background: #f8faff;
+        font-size: 15px;
+        color: #1a1a1a;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        outline: none;
+        border-color: #007bff;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+    }
+
+    .form-control::placeholder {
+        color: #888;
+    }
+
+    textarea.form-control {
+        min-height: 120px;
+        resize: vertical;
     }
 
     .form-row {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
     }
 
+    /* Buttons */
     .action-buttons {
-        flex-direction: column;
+        display: flex;
+        gap: 16px;
+        margin-top: 35px;
+        flex-wrap: wrap;
     }
 
     .btn {
-        width: 100%;
+        padding: 14px 28px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 15px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        flex: 1;
+        text-align: center;
     }
-}
+
+    .btn-primary {
+        background: #007bff;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #005fcc;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 123, 255, 0.3);
+    }
+
+    .btn-secondary {
+        background: transparent;
+        color: #007bff;
+        border: 2px solid #007bff;
+    }
+
+    .btn-secondary:hover {
+        background: #007bff;
+        color: white;
+        transform: translateY(-3px);
+    }
+
+    .required {
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .recreate-container {
+            margin: 30px 15px;
+            padding: 30px 20px;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+
+        .page-header h2 {
+            font-size: 2rem;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -185,20 +200,20 @@ textarea.form-control {
     <!-- Page Header -->
     <div class="page-header">
         <h2>
-            🔄 Recreate Event
+            Recreate Event
         </h2>
-        <p>Create a new event based on archived event data</p>
+        <p>Fill in the details below to create a new active event from your archived one</p>
     </div>
 
     <!-- Info Banner -->
     <div class="info-banner">
-        <strong>ℹ️ Note:</strong> You are recreating the event "{{ event.title }}". 
-        Update the details below and submit to create a new active event.
+        <strong>Note:</strong> You are recreating the event "<strong>{{ event.title }}</strong>". 
+        All fields are pre-filled with original data — feel free to update anything.
     </div>
 
     <!-- Original Event Info -->
     <div class="original-event-info">
-        <strong>📋 Original Event:</strong> {{ event.title }}<br>
+        <strong>Original Event:</strong> {{ event.title }}<br>
         <strong>Original Date:</strong> {{ event.date.strftime('%d %b %Y') }}<br>
         <strong>Status:</strong> Archived
     </div>
@@ -222,7 +237,7 @@ textarea.form-control {
             <label class="form-label">Description</label>
             <textarea name="description" 
                       class="form-control" 
-                      placeholder="Enter event description">{{ event.description or '' }}</textarea>
+                      placeholder="Enter event description (optional)">{{ event.description or '' }}</textarea>
         </div>
 
         <!-- Date -->
@@ -255,7 +270,7 @@ textarea.form-control {
             </div>
         </div>
 
-        <!-- Mode & Visibility Row -->
+        <!-- Mode & Visibility -->
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label">Event Mode <span class="required">*</span></label>
@@ -281,10 +296,10 @@ textarea.form-control {
                    name="venue" 
                    class="form-control" 
                    value="{{ event.venue or '' }}"
-                   placeholder="Enter venue location">
+                   placeholder="e.g., Zoom Link, Conference Hall A, etc.">
         </div>
 
-        <!-- Capacity & Tags Row -->
+        <!-- Capacity & Tags -->
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label">Capacity <span class="required">*</span></label>
@@ -336,19 +351,17 @@ textarea.form-control {
         <!-- Action Buttons -->
         <div class="action-buttons">
             <button type="submit" class="btn btn-primary">
-                ✨ Create New Event
+                Create New Event
             </button>
             <a href="{{ url_for('events.view_archives') }}" class="btn btn-secondary">
                 Cancel
             </a>
         </div>
-
     </form>
-
 </div>
 
 <script>
-    // Set minimum date to today
+    // Ensure date cannot be in the past
     document.addEventListener('DOMContentLoaded', function() {
         const dateInput = document.querySelector('input[name="date"]');
         const today = new Date().toISOString().split('T')[0];

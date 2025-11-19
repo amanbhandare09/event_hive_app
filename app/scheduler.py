@@ -96,12 +96,11 @@ def start_scheduler(app):
     scheduler.add_job(
         func=lambda: notify_users(app),
         trigger="interval",
-        seconds=10,
+        minutes=5,
         id='notify_users',
         replace_existing=True
     )
-    print("[Scheduler] Job 1: Email notifications - every 10 seconds")
-
+    print("[Scheduler] Job 1: Email notifications - every 5 minutes")
     scheduler.add_job(
         func=lambda: archive_completed_events(app),
         trigger="interval",

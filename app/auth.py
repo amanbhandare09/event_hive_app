@@ -73,4 +73,6 @@ def profile():
 @auth_blueprint.route("/logout")
 @login_required
 def logout():
+    logout_user()  # actually clears the session
+    flash("Logged out successfully.", "success")
     return render_template("login.html")

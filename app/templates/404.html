@@ -1,0 +1,87 @@
+<!-- templates/errors/404.html -->
+{% extends "base.html" %}
+{% block title %}Page Not Found | EventHive{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: #f5f9ff;
+        font-family: 'Poppins', sans-serif;
+    }
+    .error-container {
+        max-width: 600px;
+        margin: 100px auto;
+        text-align: center;
+        padding: 40px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 123, 255, 0.15);
+        border: 1px solid #dbe7ff;
+    }
+    .error-code {
+        font-size: 120px;
+        font-weight: 800;
+        color: #007bff;
+        margin-bottom: 20px;
+        line-height: 1;
+    }
+    .error-message h2 {
+        color: #003d99;
+        font-size: 28px;
+        margin-bottom: 15px;
+    }
+    .error-message p {
+        color: #555;
+        font-size: 16px;
+        margin-bottom: 30px;
+    }
+    .btn-home {
+        display: inline-block;
+        background: #007bff;
+        color: white;
+        padding: 14px 30px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 16px;
+        transition: all 0.3s;
+    }
+    .btn-home:hover {
+        background: #005fcc;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
+    }
+    .extra-links {
+        margin-top: 30px;
+    }
+    .extra-links a {
+        color: #007bff;
+        text-decoration: none;
+        margin: 0 15px;
+        font-weight: 500;
+    }
+    .extra-links a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-code">404</div>
+    <div class="error-message">
+        <h2>Oops! Page Not Found</h2>
+        <p>The page you're looking for doesn't exist or has been moved.</p>
+    </div>
+
+    <a href="{{ url_for('main.index') }}" class="btn-home">
+        Go Home
+    </a>
+
+    <div class="extra-links">
+        <a href="{{ url_for('main.profile') }}">My Profile</a> • 
+        <a href="{{ url_for('events.browse_events') }}">Browse Events</a> • 
+        <a href="{{ url_for('main.contact') }}">Contact Support</a>
+    </div>
+</div>
+{% endblock %}

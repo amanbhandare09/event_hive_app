@@ -3,307 +3,316 @@
 
 {% block extra_css %}
 <style>
-/* --------------------------------------------------
-   GENERAL CONTAINER
--------------------------------------------------- */
-body {
-    background: linear-gradient(120deg, #0a0a0a, #003300);
-    font-family: 'Poppins', sans-serif;
-}
+    /* --------------------------------------------------
+       GLOBAL & TYPOGRAPHY
+    -------------------------------------------------- */
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: #f5f9ff;
+        color: #1a1a1a;
+        line-height: 1.6;
+    }
 
-.archive-container {
-    max-width: 1200px;
-    margin: 40px auto;
-    padding: 20px;
-    color: #f0f0f0;
-}
-
-.page-header {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.page-header h2 {
-    color: #4CAF50;
-    font-size: 32px;
-    font-weight: 600;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-}
-
-.page-header p {
-    color: #ccc;
-    font-size: 16px;
-}
-
-.back-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: transparent;
-    border: 2px solid #4CAF50;
-    color: #4CAF50;
-    padding: 10px 20px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 14px;
-    transition: all 0.3s;
-    margin-bottom: 20px;
-}
-
-.back-button:hover {
-    background: #4CAF50;
-    color: #111;
-    transform: translateY(-2px);
-}
-
-/* --------------------------------------------------
-   EVENT CARDS
--------------------------------------------------- */
-.events-section {
-    margin-top: 30px;
-}
-
-.section-title {
-    color: #4CAF50;
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #4CAF50;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.event-count {
-    font-size: 14px;
-    color: #888;
-    font-weight: 400;
-}
-
-.event-card {
-    background: rgba(17, 17, 17, 0.9);
-    border-left: 5px solid #FFA726; /* Orange for archived */
-    border-radius: 12px;
-    margin-bottom: 20px;
-    padding: 25px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.6);
-    color: #f0f0f0;
-    transition: all 0.3s;
-    backdrop-filter: blur(10px);
-    position: relative;
-}
-
-.event-card::before {
-    content: "ARCHIVED";
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(255, 167, 38, 0.2);
-    color: #FFA726;
-    padding: 5px 12px;
-    border-radius: 15px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    border: 1px solid #FFA726;
-}
-
-.event-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(255, 167, 38, 0.3);
-}
-
-.event-title {
-    font-size: 22px;
-    margin-bottom: 12px;
-    color: #FFA726;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.event-meta {
-    color: #ccc;
-    line-height: 1.8;
-    margin-bottom: 15px;
-    font-size: 14px;
-}
-
-.event-meta strong {
-    color: #FFA726;
-}
-
-.visibility-tag {
-    font-size: 12px;
-    padding: 5px 12px;
-    border-radius: 20px;
-    color: #fff;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.visibility-tag.public {
-    background: #2e7d32;
-}
-
-.visibility-tag.private {
-    background: #c62828;
-}
-
-/* Buttons */
-.event-actions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 15px;
-}
-
-.recreate-btn,
-.unarchive-btn,
-.delete-btn {
-    display: inline-block;
-    padding: 10px 20px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    transition: all 0.3s;
-}
-
-.recreate-btn {
-    background: #4CAF50;
-    color: #fff;
-}
-.recreate-btn:hover { 
-    background: #45a049;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
-}
-
-.unarchive-btn {
-    background: #2196F3;
-    color: #fff;
-}
-.unarchive-btn:hover { 
-    background: #1976D2;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
-}
-
-.delete-btn {
-    background: #dc3545;
-    color: #fff;
-}
-.delete-btn:hover { 
-    background: #c82333;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
-}
-
-/* No Events State */
-.no-events {
-    text-align: center;
-    padding: 80px 20px;
-    color: #888;
-    background: rgba(17, 17, 17, 0.5);
-    border-radius: 12px;
-    border: 2px dashed rgba(255, 167, 38, 0.3);
-}
-
-.no-events-icon {
-    font-size: 80px;
-    margin-bottom: 20px;
-    opacity: 0.3;
-}
-
-.no-events h3 {
-    color: #FFA726;
-    font-size: 24px;
-    margin-bottom: 10px;
-}
-
-.no-events p {
-    color: #ccc;
-    font-size: 16px;
-    margin-bottom: 20px;
-}
-
-.primary-btn {
-    display: inline-block;
-    background: #4CAF50;
-    color: #111;
-    padding: 12px 25px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 15px;
-    transition: all 0.3s;
-}
-
-.primary-btn:hover {
-    background: #45a049;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
-}
-
-/* Info Box */
-.info-box {
-    background: rgba(255, 167, 38, 0.1);
-    border-left: 4px solid #FFA726;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 25px;
-    color: #FFA726;
-    font-size: 14px;
-}
-
-.info-box strong {
-    font-weight: 600;
-}
-
-/* Mobile Responsive */
-@media (max-width: 768px) {
     .archive-container {
-        padding: 15px;
-        margin: 20px auto;
+        max-width: 1200px;
+        margin: 60px auto;
+        padding: 20px;
+    }
+
+    /* --------------------------------------------------
+       BACK BUTTON & HEADER
+    -------------------------------------------------- */
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: #007bff;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 15px;
+        padding: 10px 20px;
+        border: 2px solid #007bff;
+        border-radius: 10px;
+        transition: all 0.3s;
+        margin-bottom: 25px;
+    }
+
+    .back-button:hover {
+        background: #007bff;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 40px;
     }
 
     .page-header h2 {
+        color: #003d99;
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+    }
+
+    .page-header p {
+        color: #555;
+        font-size: 16px;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    /* --------------------------------------------------
+       INFO BOX
+    -------------------------------------------------- */
+    .info-box {
+        background: #e7f3ff;
+        border-left: 5px solid #007bff;
+        padding: 18px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        color: #003d99;
+        font-size: 15px;
+        box-shadow: 0 2px 10px rgba(0, 123, 255, 0.08);
+    }
+
+    .info-box strong {
+        color: #007bff;
+    }
+
+    /* --------------------------------------------------
+       SECTION TITLE
+    -------------------------------------------------- */
+    .section-title {
+        color: #003d99;
         font-size: 24px;
-        flex-direction: column;
-        gap: 10px;
+        font-weight: 600;
+        margin-bottom: 25px;
+        padding-bottom: 12px;
+        border-bottom: 3px solid #007bff;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .event-count {
+        font-size: 15px;
+        color: #666;
+        background: #e3f2ff;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+
+    /* --------------------------------------------------
+       EVENT CARD (Clean white card style)
+    -------------------------------------------------- */
+    .event-card {
+        background: white;
+        border-radius: 14px;
+        padding: 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(0, 68, 255, 0.08);
+        border: 1px solid #dbe7ff;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .event-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 30px rgba(0, 123, 255, 0.15);
+    }
+
+    .event-card::before {
+        content: "ARCHIVED";
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: #fff3cd;
+        color: #ffa726;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: 1px solid #ffd78a;
+        letter-spacing: 0.8px;
     }
 
     .event-title {
-        font-size: 18px;
+        font-size: 22px;
+        font-weight: 600;
+        color: #003d99;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
     }
 
+    .visibility-tag {
+        font-size: 12px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .visibility-tag.public {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .visibility-tag.private {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .event-meta {
+        color: #444;
+        font-size: 15px;
+        line-height: 2;
+        margin-bottom: 20px;
+    }
+
+    .event-meta strong {
+        color: #007bff;
+        font-weight: 600;
+    }
+
+    /* --------------------------------------------------
+       ACTION BUTTONS
+    -------------------------------------------------- */
     .event-actions {
-        flex-direction: column;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 10px;
     }
 
-    .event-actions > * {
-        width: 100%;
+    .recreate-btn,
+    .delete-btn {
+        padding: 11px 22px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .recreate-btn {
+        background: #007bff;
+        color: white;
+    }
+
+    .recreate-btn:hover {
+        background: #005fcc;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 123, 255, 0.3);
+    }
+
+    .delete-btn {
+        background: #dc3545;
+        color: white;
+    }
+
+    .delete-btn:hover {
+        background: #c82333;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(220, 53, 69, 0.3);
+    }
+
+    /* --------------------------------------------------
+       NO EVENTS STATE
+    -------------------------------------------------- */
+    .no-events {
         text-align: center;
+        padding: 90px 30px;
+        background: white;
+        border-radius: 14px;
+        border: 2px dashed #c9ddff;
+        color: #666;
+        margin-top: 20px;
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.06);
     }
 
-    .section-title {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
+    .no-events-icon {
+        font-size: 90px;
+        margin-bottom: 20px;
+        opacity: 0.2;
     }
-}
+
+    .no-events h3 {
+        color: #003d99;
+        font-size: 26px;
+        margin-bottom: 12px;
+    }
+
+    .no-events p {
+        font-size: 16px;
+        margin-bottom: 25px;
+        color: #555;
+    }
+
+    .primary-btn {
+        display: inline-block;
+        background: #007bff;
+        color: white;
+        padding: 14px 28px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 15px;
+        transition: all 0.3s;
+    }
+
+    .primary-btn:hover {
+        background: #005fcc;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 123, 255, 0.3);
+    }
+
+    /* --------------------------------------------------
+       MOBILE RESPONSIVE
+    -------------------------------------------------- */
+    @media (max-width: 768px) {
+        .archive-container {
+            padding: 15px;
+            margin: 30px auto;
+        }
+
+        .page-header h2 {
+            font-size: 1.8rem;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .event-title {
+            font-size: 19px;
+        }
+
+        .event-actions {
+            flex-direction: column;
+        }
+
+        .event-actions > * {
+            width: 100%;
+            text-align: center;
+        }
+
+        .section-title {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -312,21 +321,21 @@ body {
 
     <!-- Back Button -->
     <a href="{{ url_for('main.profile') }}" class="back-button">
-        ← Back to Events
+        Back to Events
     </a>
 
     <!-- Page Header -->
     <div class="page-header">
         <h2>
-            📦 Archived Events
+            Archived Events
         </h2>
-        <p>Manage your archived events - recreate, restore, or delete permanently</p>
+        <p>View and manage your archived events. Recreate them or delete permanently.</p>
     </div>
 
     <!-- Info Box -->
     <div class="info-box">
-        <strong>ℹ️ About Archives:</strong> Archived events are hidden from public listings. 
-        You can recreate them with pre-filled data or restore them to active status.
+        <strong>About Archives:</strong> Archived events are saved for future use. 
+        You can recreate them with all original details or delete them forever.
     </div>
 
     <!-- Events Section -->
@@ -363,16 +372,16 @@ body {
                     <!-- Recreate Button -->
                     <a href="{{ url_for('events.recreate_from_archive', event_id=event.id) }}"
                        class="recreate-btn">
-                        🔄 Recreate Event
+                        Recreate Event
                     </a>
 
                     <!-- Delete Permanently Button -->
                     <form action="{{ url_for('events.delete_event', event_id=event.id) }}"
                           method="POST"
                           style="display:inline;"
-                          onsubmit="return confirm('⚠️ Permanently delete this archived event? This action cannot be undone!');">
+                          onsubmit="return confirm('Permanently delete this archived event? This action cannot be undone!');">
                         <button type="submit" class="delete-btn">
-                            🗑️ Delete Forever
+                            Delete Forever
                         </button>
                     </form>
                 </div>
@@ -381,31 +390,29 @@ body {
             {% endfor %}
         {% else %}
             <div class="no-events">
-                <div class="no-events-icon">📦</div>
+                <div class="no-events-icon">Archive</div>
                 <h3>No Archived Events</h3>
-                <p>You haven't archived any events yet. Archive events to save them for later recreation.</p>
+                <p>You haven't archived any events yet.</p>
                 <a href="{{ url_for('main.profile') }}" class="primary-btn">
                     View Active Events
                 </a>
             </div>
         {% endif %}
     </div>
-
 </div>
 
-<!-- Confirmation Script -->
+<!-- Smooth Reveal Animation -->
 <script>
-    // Add smooth animations
     document.addEventListener('DOMContentLoaded', function() {
         const cards = document.querySelectorAll('.event-card');
         cards.forEach((card, index) => {
             card.style.opacity = '0';
-            card.style.transform = 'translateY(20px)';
+            card.style.transform = 'translateY(30px)';
             setTimeout(() => {
-                card.style.transition = 'all 0.5s ease';
+                card.style.transition = 'all 0.6s ease';
                 card.style.opacity = '1';
                 card.style.transform = 'translateY(0)';
-            }, index * 100);
+            }, index * 120);
         });
     });
 </script>

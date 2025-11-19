@@ -553,6 +553,10 @@ def create_attendee():
         flash("Sorry, this event is full!", "danger")
         return redirect(url_for("main.profile"))
 
+    # ←←← NEW: Reduce the event's capacity by 1 ←←←
+    event.capacity -= 1
+    # (If you have a separate "remaining_capacity" column, decrement that instead)
+
     # Generate unique token
     token = secrets.token_urlsafe(32)
 
@@ -566,7 +570,7 @@ def create_attendee():
     db.session.add(attendee)
     db.session.flush()  # Get attendee.id
 
-    # ✅ CRITICAL FIX: Add user to the many-to-many relationship
+    # CRITICAL FIX: Add user to the many-to-many relationship
     if current_user not in event.attendees:
         event.attendees.append(current_user)
 
@@ -593,12 +597,12 @@ def create_attendee():
     qr.make(fit=True)
 
     # Save QR image
-    img = qr.make_image(fill_color="black", back_color="white")
     qr_dir = os.path.join(current_app.root_path, "static", "qr_codes")
     os.makedirs(qr_dir, exist_ok=True)
 
     qr_filename = f"qr_{current_user.id}_{event_id}_{attendee.id}.png"
     qr_path = os.path.join(qr_dir, qr_filename)
+    img = qr.make_image(fill_color="black", back_color="white")
     img.save(qr_path)
 
     # Store QR path
@@ -650,7 +654,11 @@ def unregister_attendee(event_id):
     # Remove from many-to-many relationship
     event.attendees.remove(current_user)
     
-    # ✅ DELETE THE ATTENDEE RECORD (with QR code)
+    # Increase the event capacity by 1 when someone unregisters
+    event.capacity += 1
+    # (If you use a separate "remaining_capacity" column, do: event.remaining_capacity += 1)
+
+    # DELETE THE ATTENDEE RECORD (with QR code)
     attendee = Attendee.query.filter_by(
         user_id=current_user.id,
         event_id=event_id
@@ -673,7 +681,6 @@ def unregister_attendee(event_id):
     
     flash("Successfully unregistered from the event!", "success")
     return redirect(url_for("main.profile"))
-
 
 # -------------------------------------
 # VIEW EVENT ATTENDEES

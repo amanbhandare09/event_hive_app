@@ -1,4 +1,4 @@
-from flask import Flask, app
+from flask import Flask, app, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
@@ -39,6 +39,11 @@ def create_app():
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
+    
+    # After creating the Flask app
+    # @app.errorhandler(404)
+    # def page_not_found(e):
+    #     return render_template('errors/404.html'), 404
 
     from .main import main_blueprint
     app.register_blueprint(main_blueprint)
