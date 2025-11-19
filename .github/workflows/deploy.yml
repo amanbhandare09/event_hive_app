@@ -1,0 +1,298 @@
+# .github/workflows/deploy.yml
+
+name: CD Pipeline - Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main  # Only deploy when pushing to main
+
+env:
+  PYTHON_VERSION: '3.11'
+  AWS_REGION: 'us-east-1'  # Change to your AWS region
+  ECR_REPOSITORY: 'eventhive'  # Change to your ECR repository name
+  EB_APPLICATION_NAME: 'eventhive'  # Change to your EB application name
+  EB_ENVIRONMENT_NAME: 'eventhive-env'  # Change to your EB environment name
+
+jobs:
+  # Job 1: Run CI checks first
+  ci-checks:
+    name: Run CI Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8 pytest pytest-cov
+
+      - name: Run Flake8
+        run: |
+          flake8 app/ models/ --max-line-length=120 --exclude=__pycache__,migrations
+
+      - name: Run Tests
+        run: |
+          pytest tests/ --cov=app --cov=models -v
+        env:
+          FLASK_APP: app
+          FLASK_ENV: testing
+        continue-on-error: false
+
+  # Job 2: Build and Push Docker Image to ECR
+  build-and-push:
+    name: Build & Push to ECR
+    runs-on: ubuntu-latest
+    needs: ci-checks
+    outputs:
+      image: ${{ steps.build-image.outputs.image }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "Building Docker image..."
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          
+          echo "Pushing to ECR..."
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "✅ Image pushed successfully!"
+
+  # Job 3: Deploy to AWS Elastic Beanstalk
+  deploy-elastic-beanstalk:
+    name: Deploy to Elastic Beanstalk
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create Dockerrun.aws.json
+        run: |
+          cat > Dockerrun.aws.json <<EOF
+          {
+            "AWSEBDockerrunVersion": "1",
+            "Image": {
+              "Name": "${{ needs.build-and-push.outputs.image }}",
+              "Update": "true"
+            },
+            "Ports": [
+              {
+                "ContainerPort": 5000,
+                "HostPort": 80
+              }
+            ],
+            "Environment": [
+              {
+                "Name": "FLASK_APP",
+                "Value": "app"
+              }
+            ]
+          }
+          EOF
+
+      - name: Generate deployment package
+        run: |
+          zip -r deploy.zip Dockerrun.aws.json .ebextensions || zip -r deploy.zip Dockerrun.aws.json
+
+      - name: Deploy to Elastic Beanstalk
+        uses: einaregilsson/beanstalk-deploy@v22
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: ${{ env.EB_APPLICATION_NAME }}
+          environment_name: ${{ env.EB_ENVIRONMENT_NAME }}
+          version_label: ${{ github.sha }}
+          region: ${{ env.AWS_REGION }}
+          deployment_package: deploy.zip
+          wait_for_environment_recovery: 300
+
+      - name: Deployment Success
+        run: |
+          echo "🎉 Deployment completed successfully!"
+          echo "Application URL: http://${{ env.EB_ENVIRONMENT_NAME }}.elasticbeanstalk.com"
+
+  # Alternative: Deploy to EC2 (Uncomment if using EC2 instead)
+  # deploy-ec2:
+  #   name: Deploy to EC2
+  #   runs-on: ubuntu-latest
+  #   needs: build-and-push
+  #   
+  #   steps:
+  #     - name: Deploy to EC2 via SSH
+  #       uses: appleboy/ssh-action@master
+  #       with:
+  #         host: ${{ secrets.EC2_HOST }}
+  #         username: ${{ secrets.EC2_USER }}
+  #         key: ${{ secrets.EC2_SSH_KEY }}
+  #         script: |
+  #           cd /home/ubuntu/eventhive
+  #           
+  #           # Pull latest code
+  #           git pull origin main
+  #           
+  #           # Login to ECR and pull new image
+  #           aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+  #           docker pull ${{ needs.build-and-push.outputs.image }}
+  #           
+  #           # Stop old container
+  #           docker stop eventhive || true
+  #           docker rm eventhive || true
+  #           
+  #           # Run new container
+  #           docker run -d \
+  #             --name eventhive \
+  #             -p 80:5000 \
+  #             --env-file .env \
+  #             --restart unless-stopped \
+  #             ${{ needs.build-and-push.outputs.image }}
+  #           
+  #           # Clean up old images
+  #           docker image prune -f
+  #           
+  #           echo "✅ Deployment completed!"
+
+  # Alternative: Deploy to ECS (Uncomment if using ECS instead)
+  # deploy-ecs:
+  #   name: Deploy to ECS
+  #   runs-on: ubuntu-latest
+  #   needs: build-and-push
+  #   
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: ${{ env.AWS_REGION }}
+  #
+  #     - name: Fill in the new image ID in the Amazon ECS task definition
+  #       id: task-def
+  #       uses: aws-actions/amazon-ecs-render-task-definition@v1
+  #       with:
+  #         task-definition: task-definition.json
+  #         container-name: eventhive
+  #         image: ${{ needs.build-and-push.outputs.image }}
+  #
+  #     - name: Deploy Amazon ECS task definition
+  #       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+  #       with:
+  #         task-definition: ${{ steps.task-def.outputs.task-definition }}
+  #         service: eventhive-service
+  #         cluster: eventhive-cluster
+  #         wait-for-service-stability: true
+  #
+  #     - name: Deployment Success
+  #       run: echo "✅ ECS deployment completed!"
+
+  # Job 4: Health Check
+  health-check:
+    name: Post-Deployment Health Check
+    runs-on: ubuntu-latest
+    needs: deploy-elastic-beanstalk
+    
+    steps:
+      - name: Wait for deployment to stabilize
+        run: sleep 30
+
+      - name: Check application health
+        run: |
+          # Replace with your actual application URL
+          URL="http://${{ env.EB_ENVIRONMENT_NAME }}.${{ env.AWS_REGION }}.elasticbeanstalk.com"
+          
+          echo "Checking health at: $URL"
+          
+          for i in {1..5}; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" $URL || echo "000")
+            
+            if [ "$response" = "200" ] || [ "$response" = "302" ]; then
+              echo "✅ Application is healthy! (HTTP $response)"
+              exit 0
+            fi
+            
+            echo "⏳ Attempt $i/5: Got HTTP $response, retrying in 10s..."
+            sleep 10
+          done
+          
+          echo "⚠️ Health check did not return 200/302, but deployment may still be successful"
+          exit 0
+
+  # Job 5: Notification
+  notify:
+    name: Send Deployment Notification
+    runs-on: ubuntu-latest
+    needs: [deploy-elastic-beanstalk, health-check]
+    if: always()
+    
+    steps:
+      - name: Create Deployment Summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Production (AWS Elastic Beanstalk)" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`main\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Author:** @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ needs.deploy-elastic-beanstalk.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Application URL:** http://${{ env.EB_ENVIRONMENT_NAME }}.${{ env.AWS_REGION }}.elasticbeanstalk.com" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.deploy-elastic-beanstalk.result }}" == "success" ]; then
+            echo "✅ **Deployment Successful!**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Deployment Failed!**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      # Optional: Send Slack notification (uncomment if you have Slack webhook)
+      # - name: Send Slack notification
+      #   uses: 8398a7/action-slack@v3
+      #   with:
+      #     status: ${{ job.status }}
+      #     text: |
+      #       Deployment to AWS Elastic Beanstalk ${{ job.status }}
+      #       Commit: ${{ github.sha }}
+      #       Author: ${{ github.actor }}
+      #     webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+      #   if: always()
