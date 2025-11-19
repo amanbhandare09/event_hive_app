@@ -72,7 +72,7 @@ jobs:
         run: |
           echo "Waiting for container to start..."
           sleep 10
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.EC2_HOST }}:5000 || echo "000")
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.EC2_HOST }}:80 || echo "000")
           if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
             echo "Deployment SUCCESS! HTTP status: $HTTP_CODE"
           else
