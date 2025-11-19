@@ -10,16 +10,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to EC2 using SSH
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            echo "===== FIX SSH PERMISSIONS ====="
-            chmod 700 ~/.ssh || true
-            chmod 600 ~/.ssh/authorized_keys || true
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set up SSH key
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
+
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
 
             echo "===== INSTALL DOCKER IF NOT INSTALLED ====="
             if ! command -v docker &> /dev/null
@@ -52,3 +53,5 @@ jobs:
             docker run -d --name myapp -p 5000:5000 myapp:latest
 
             echo "===== DEPLOYMENT COMPLETE ====="
+
+          EOF
