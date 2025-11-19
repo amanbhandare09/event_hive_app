@@ -1,20 +1,54 @@
-- name: Deploy to EC2
-  uses: appleboy/ssh-action@v1.2.0
-  with:
-    host: ${{ secrets.EC2_HOST }}
-    username: ${{ secrets.EC2_USER }}
-    key: ${{ secrets.EC2_SSH_KEY }}
-    script: |
-      cd /home/ubuntu/myapp
-      
-      echo "📥 Pulling latest code..."
-      git pull origin main
+name: Deploy to EC2
 
-      echo "🛑 Stopping old containers..."
-      docker compose down || true
+on:
+  push:
+    branches:
+      - main
 
-      echo "🔨 Building new container..."
-      docker compose build
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-      echo "🚀 Starting new container..."
-      docker compose up -d
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "===== INSTALL DOCKER IF NOT INSTALLED ====="
+            if ! command -v docker &> /dev/null
+            then
+              echo "Docker not found. Installing..."
+              sudo apt update
+              sudo apt install -y docker.io
+              sudo systemctl enable docker
+              sudo usermod -aG docker $USER
+            fi
+
+            echo "===== ENSURE APP DIRECTORY EXISTS ====="
+            mkdir -p /home/ubuntu/myapp
+
+            echo "===== CLONE OR UPDATE REPO ====="
+            cd /home/ubuntu/myapp
+
+            if [ ! -d ".git" ]; then
+              echo "No git repo found. Cloning..."
+              git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git .
+            else
+              echo "Repo exists. Pulling latest changes..."
+              git reset --hard
+              git pull origin main
+            fi
+
+            echo "===== STOP OLD CONTAINERS ====="
+            docker compose down || true
+
+            echo "===== BUILD NEW IMAGE ====="
+            docker compose build --no-cache
+
+            echo "===== START NEW CONTAINER ====="
+            docker compose up -d
+
+            echo "===== DEPLOYMENT COMPLETE ====="
