@@ -5,3 +5,6 @@ ven
 __pycache__
 test.py 
 myenv
+
+migrations/
+instance/
