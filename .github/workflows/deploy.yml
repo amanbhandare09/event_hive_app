@@ -1,40 +1,56 @@
-name: Deploy Flask Docker App to EC2
+- name: Deploy to EC2
+  uses: appleboy/ssh-action@v1.2.0
+  with:
+    host: ${{ secrets.EC2_HOST }}
+    username: ${{ secrets.EC2_USER }}
+    key: ${{ secrets.EC2_SSH_KEY }}
+    script: |
+      # ===============================
+      # Install Docker if not installed
+      # ===============================
+      if ! command -v docker &> /dev/null
+      then
+          echo "🐋 Installing Docker..."
+          sudo apt update
+          sudo apt install -y docker.io
+          sudo systemctl start docker
+          sudo systemctl enable docker
+          sudo usermod -aG docker $USER
+      else
+          echo "🐋 Docker already installed."
+      fi
 
-on:
-  push:
-    branches:
-      - main   # deploy only when main is updated
+      # ===============================
+      # Create app directory if missing
+      # ===============================
+      if [ ! -d "/home/ubuntu/myapp" ]; then
+          echo "📁 Creating project directory..."
+          mkdir -p /home/ubuntu/myapp
+      fi
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+      cd /home/ubuntu/myapp
 
-    steps:
-      # 1️⃣ Checkout code
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      # ===============================
+      # If .git missing → clone repo
+      # ===============================
+      if [ ! -d ".git" ]; then
+          echo "🔄 Cloning repository..."
+          git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git .
+      else
+          echo "📥 Pulling latest changes..."
+          git pull origin main
+      fi
 
-      # 2️⃣ SSH into EC2 and deploy
-      - name: Deploy to EC2 using SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            echo "📁 Going to app directory..."
-            cd /home/ubuntu/myapp
+      # ===============================
+      # Build and restart Docker
+      # ===============================
+      echo "🛑 Stopping old container..."
+      docker compose down || true
 
-            echo "📥 Pulling latest changes from GitHub..."
-            git pull origin main
+      echo "🔨 Building new image..."
+      docker compose build --no-cache
 
-            echo "🛑 Stopping old containers..."
-            sudo docker compose down || true
+      echo "🚀 Starting container..."
+      docker compose up -d
 
-            echo "🔨 Building new Docker image..."
-            sudo docker compose build --no-cache
-
-            echo "🚀 Starting new container..."
-            sudo docker compose up -d
-
-            echo "🎉 Deployment completed successfully!"
+      echo "🎉 Deployment successful!"
