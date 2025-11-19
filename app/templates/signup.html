@@ -4,115 +4,200 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up | EventHive</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        body {
-            font-family: 'Poppins', Arial, sans-serif;
-            background: linear-gradient(135deg, #e8f0ff, #ffffff);
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+        /* RESET */
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .signup-container {
+        body {
+            font-family: "Poppins", sans-serif;
+            background: #f5f9ff;
+            color: #1a1a1a;
+        }
+
+        /* NAVBAR (exact copy from landing/login page) */
+        nav {
             background: #ffffff;
-            padding: 2rem;
-            border-radius: 14px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-bottom: 1px solid #d0e3ff;
+            padding: 18px 50px;
+            position: sticky;
+            top: 0;
             width: 100%;
-            max-width: 420px;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1300px;
+            margin: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-link {
+            font-size: 26px;
+            font-weight: 700;
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            background: #007bff;
+            color: #fff;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover {
+            background: #005fcc;
+        }
+
+        /* PAGE WRAPPER (same spacing as login page) */
+        .page-wrapper {
+            padding-top: 6rem;
+            padding-bottom: 6rem;
+            max-width: 1200px;
+            margin: auto;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* SIGNUP CARD (same design as login card) */
+        .signup-card {
+            background: white;
+            padding: 2.8rem;
+            border-radius: 14px;
+            border: 1px solid #dbe7ff;
+            box-shadow: 0 4px 20px rgba(0, 68, 255, 0.05);
+            width: 100%;
+            max-width: 430px;
+            text-align: center;
         }
 
         h2 {
-            text-align: center;
-            color: #1e40af;
+            color: #003d99;
+            font-size: 2rem;
             margin-bottom: 1.5rem;
             font-weight: 600;
         }
 
         form {
-            display: flex;
-            flex-direction: column;
+            margin-top: 1rem;
+            text-align: left;
         }
 
         label {
-            margin-bottom: 0.3rem;
-            font-weight: 500;
+            font-weight: 600;
+            color: #004099;
         }
 
         input {
-            padding: 0.75rem;
-            margin-bottom: 1rem;
-            border: 1px solid #d4d4d4;
-            border-radius: 8px;
+            width: 100%;
+            padding: 0.9rem;
+            margin-top: 0.4rem;
+            margin-bottom: 1.2rem;
+            border-radius: 10px;
+            border: 1px solid #c9ddff;
+            background: #f8faff;
+            font-size: 1rem;
             outline: none;
-            transition: border-color 0.2s;
         }
 
         input:focus {
-            border-color: #1e40af;
-            box-shadow: 0 0 5px rgba(30, 64, 175, 0.2);
+            border-color: #007bff;
+            background: #ffffff;
         }
 
         input[type="submit"] {
-            background-color: #1e40af;
+            background: #007bff;
             color: white;
-            font-weight: 600;
-            cursor: pointer;
             border: none;
+            cursor: pointer;
+            font-weight: 600;
             transition: 0.3s;
         }
 
         input[type="submit"]:hover {
-            background-color: #153383;
+            background: #005fcc;
         }
 
         .login-link {
-            text-align: center;
             margin-top: 1rem;
-            font-size: 0.9rem;
+            font-size: 1rem;
         }
 
         .login-link a {
-            color: #1e40af;
-            font-weight: 500;
+            color: #007bff;
+            font-weight: 600;
             text-decoration: none;
         }
 
         .login-link a:hover {
             text-decoration: underline;
         }
+        .signup-card {
+    background: white;
+    padding: 2.8rem;
+    border-radius: 14px;
+    border: 1px solid #dbe7ff;
+    box-shadow: 0 4px 20px rgba(0, 68, 255, 0.05);
+    width: 100%;
+    max-width: 560px;   /* ⬅ increased width */
+    text-align: center;
+}
+
     </style>
 </head>
+
 <body>
 
-    <div class="signup-container">
-        <h2>Create Account</h2>
-        <form action="{{ url_for('auth.signup_post') }}" method="POST">
-            
-            <label for="name">User Name</label>
-            <input type="text" id="name" name="name" placeholder="Enter your name" required>
+    <!-- NAVBAR -->
+    <nav>
+        <div class="nav-container">
+            <a class="logo-link" href="/">EventHive</a>
+            <div class="nav-links">
+                <a href="/login">Login</a>
+            </div>
+        </div>
+    </nav>
 
-            <label for="email">Email Address</label>
-            <input type="email" id="email" name="email" placeholder="Enter your email" required>
+    <!-- SIGNUP FORM CARD -->
+    <div class="page-wrapper">
+        <div class="signup-card">
+            <h2>Create Account</h2>
 
-            <label for="phone">Phone Number</label>
-            <input type="number" id="phone" name="phone" placeholder="Enter your phone" required>
+            <form action="{{ url_for('auth.signup_post') }}" method="POST">
 
-            <label for="address">Address</label>
-            <input type="text" id="address" name="address" placeholder="Enter your address" required>
+                <label>User Name</label>
+                <input type="text" name="name" placeholder="Enter your name" required>
 
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" placeholder="Create a password" required>
+                <label>Email Address</label>
+                <input type="email" name="email" placeholder="Enter your email" required>
 
-            <input type="submit" value="Sign Up">
-        </form>
+                <label>Phone Number</label>
+                <input type="number" name="phone" placeholder="Enter your phone" required>
 
-        <div class="login-link">
-            Already have an account?
-            <a href="/login">Login</a>
+                <label>Address</label>
+                <input type="text" name="address" placeholder="Enter your address" required>
+
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Create a password" required>
+
+                <input type="submit" value="Sign Up">
+            </form>
+
+            <div class="login-link">
+                Already have an account? <a href="/login">Login</a>
+            </div>
         </div>
     </div>
 
