@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to EC2
+      - name: Deploy to EC2 using SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -20,41 +20,35 @@ jobs:
             echo "===== FIX SSH PERMISSIONS ====="
             chmod 700 ~/.ssh || true
             chmod 600 ~/.ssh/authorized_keys || true
-            echo "===== CURRENT AUTHORIZED KEYS ====="
-            cat ~/.ssh/authorized_keys || true
 
             echo "===== INSTALL DOCKER IF NOT INSTALLED ====="
             if ! command -v docker &> /dev/null
             then
-              echo "Docker not found. Installing..."
               sudo apt update
               sudo apt install -y docker.io
               sudo systemctl enable docker
               sudo usermod -aG docker $USER
             fi
 
-            echo "===== ENSURE APP DIRECTORY EXISTS ====="
+            echo "===== CLONE OR UPDATE PROJECT ====="
             mkdir -p /home/ubuntu/myapp
-
-            echo "===== CLONE OR UPDATE REPO ====="
             cd /home/ubuntu/myapp
 
             if [ ! -d ".git" ]; then
-              echo "No git repo found. Cloning..."
               git clone https://github.com/Event-Hive-25/event_hive_app.git .
             else
-              echo "Repo exists. Pulling latest changes..."
               git reset --hard
               git pull origin main
             fi
 
-            echo "===== STOP OLD CONTAINERS ====="
-            docker compose down || true
+            echo "===== STOP & REMOVE OLD DOCKER CONTAINER ====="
+            docker stop myapp || true
+            docker rm myapp || true
 
-            echo "===== BUILD NEW IMAGE ====="
-            docker compose build --no-cache
+            echo "===== BUILD NEW DOCKER IMAGE ====="
+            docker build -t myapp:latest .
 
-            echo "===== START NEW CONTAINER ====="
-            docker compose up -d
+            echo "===== RUN NEW CONTAINER ====="
+            docker run -d --name myapp -p 5000:5000 myapp:latest
 
             echo "===== DEPLOYMENT COMPLETE ====="
