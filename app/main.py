@@ -516,7 +516,7 @@ def create_attendee():
         user_id=current_user.id,
         event_id=event_id
     ).first()
-    
+
     if existing_attendee or current_user in event.attendees:
         if request.is_json:
             return jsonify({"error": "You are already registered for this event!"}), 400
@@ -544,18 +544,15 @@ def create_attendee():
         flash("Join request sent! Please wait for approval.", "info")
         return redirect(url_for("main.profile"))
 
-    # PUBLIC EVENT → Register directly
-    # Check capacity
-    current_attendees = Attendee.query.filter_by(event_id=event_id).count()
-    if current_attendees >= event.capacity:
+    # PUBLIC EVENT → Check capacity BEFORE creating attendee
+    if event.capacity <= 0:
         if request.is_json:
             return jsonify({"error": "Sorry, this event is full!"}), 400
         flash("Sorry, this event is full!", "danger")
         return redirect(url_for("main.profile"))
 
-    # ←←← NEW: Reduce the event's capacity by 1 ←←←
+    # Remaining slot confirmed → decrease capacity
     event.capacity -= 1
-    # (If you have a separate "remaining_capacity" column, decrement that instead)
 
     # Generate unique token
     token = secrets.token_urlsafe(32)
@@ -570,7 +567,7 @@ def create_attendee():
     db.session.add(attendee)
     db.session.flush()  # Get attendee.id
 
-    # CRITICAL FIX: Add user to the many-to-many relationship
+    # Add user to many-to-many relationship
     if current_user not in event.attendees:
         event.attendees.append(current_user)
 
@@ -619,6 +616,7 @@ def create_attendee():
 
     flash("Successfully registered for the event!", "success")
     return redirect(url_for("attendees.registration_success", attendee_id=attendee.id))
+
 
 
 @attendees_blueprint.route('/registration-success/<int:attendee_id>')
