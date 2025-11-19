@@ -65,7 +65,7 @@ jobs:
             docker build -t myapp:latest .
 
             echo "===== RUN CONTAINER ====="
-            docker run -d --name myapp -p 8080:5000 myapp:latest
+            docker run -d --name myapp -p 80:5000 myapp:latest
 
             echo "===== DEPLOYMENT DONE ====="
           EOF
