@@ -26,6 +26,8 @@ jobs:
           cat > .env << EOF
           FLASK_ENV=${{ secrets.FLASK_ENV || 'production' }}
           SECRET_KEY=${{ secrets.SECRET_KEY }}
+          FLASK_APP=app
+
           SQLALCHEMY_DATABASE_URI=${{ secrets.SQLALCHEMY_DATABASE_URI }}
           EOF
 
@@ -63,7 +65,7 @@ jobs:
             docker build -t myapp:latest .
 
             echo "===== RUN CONTAINER ====="
-            docker run -d --name myapp -p 5000:5000 myapp:latest
+            docker run -d --name myapp -p 80:5000 myapp:latest
 
             echo "===== DEPLOYMENT DONE ====="
           EOF
