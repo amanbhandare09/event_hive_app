@@ -5,8 +5,6 @@ FROM python:3.12-slim
 WORKDIR /app
 
 
-
-# Copy requirements first (for build caching)
 COPY requirements.txt .
 
 # Install dependencies
